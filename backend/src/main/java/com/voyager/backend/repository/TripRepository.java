@@ -1,0 +1,9 @@
+package com.voyager.backend.repository;
+
+import com.voyager.backend.model.Trip;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface TripRepository extends JpaRepository<Trip, Long> {
+}
