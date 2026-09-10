@@ -1,0 +1,138 @@
+{
+  "title": "Choose Voyager's visual world",
+  "question": "The roll assigned Consignment Manifest. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Consignment Manifest",
+      "kicker": "THE ROLL",
+      "lineage": "freight consignment notes, container stencils, wharf checker plate",
+      "thesis": "Every person, cost and journey is a consigned item with an origin, a destination, a carrier and a weight.",
+      "palette": ["#F2EEE5", "#23282C", "#E4A11B", "#5A6B72"],
+      "materials": ["stencil paint on steel", "kraft consignment note", "checker plate"],
+      "viewport": "Trip name stencilled across the head plate; the two answers stamped as full-width rows -- NEXT MOVEMENT and YOUR BALANCE; then six numbered manifest lines, each with its live count hard-right in a tabular column.",
+      "risk": "Industrial language reads cold for a mates' holiday if the stencils turn decorative instead of functional.",
+      "raised": [
+        {
+          "from": "generative-parametric-identity",
+          "raise": "Each trip's stencil colour derives from one stable seed, its invite code, while every money colour stays fixed -- the identity varies, the meaning never does."
+        },
+        {
+          "from": "paper-folds-pleats-deployable-miura-orbit-sheet",
+          "raise": "One change propagates visibly across the whole sheet: removing a member re-settles every dependent figure in a single orchestrated motion instead of leaving it to be discovered."
+        },
+        {
+          "from": "clouds-storms-auroras-iridescent-cloud-edge",
+          "raise": "The field stays achromatic ink-on-kraft so the one safety-yellow signal is the only chromatic thing on screen and cannot be missed."
+        }
+      ]
+    },
+    {
+      "id": "model-pick",
+      "label": "The Lineup Bill",
+      "kicker": "IMPECCABLE'S PICK",
+      "lineage": "festival lineup grids, screenprint bills, laminates and woven wristbands",
+      "thesis": "The trip is a lineup: days are columns, agreed plans are set times, and your laminate is your membership.",
+      "palette": ["#12162B", "#EFEAD8", "#F04E3E", "#D6357F"],
+      "materials": ["screenprint on uncoated stock", "woven wristband", "PVC laminate"],
+      "viewport": "The trip name as a headline bill, today's column pulled forward with agreed items as set times, and your laminate strip pinned along the bottom edge carrying your balance.",
+      "risk": "Also exactly where most concepts for this audience land, and it can read as a festival app rather than a trip planner."
+    },
+    {
+      "id": "challenger-night-flight",
+      "label": "Night Instrument Panel",
+      "verdict": "competitive",
+      "lineage": "a small aircraft's night instrument six-pack",
+      "thesis": "Six instruments, each owning one truth, read in a practiced cross-check sweep.",
+      "palette": ["#0B0E0C", "#151A16", "#E8EDE6", "#7BE05A", "#E0A32B"],
+      "materials": ["matte instrument panel", "luminous markings", "radium glow"],
+      "viewport": "Two ranked rows of three gauges; next movement and your balance carry trend as well as value, and deviations tilt before anything alarms.",
+      "risk": "A dark instrument panel can read as a car-nerd product rather than something four friends share.",
+      "case": "The strongest fuse of the six: 'a fixed constellation of instruments, each owning one truth' describes your six-tile overview almost literally, and a gauge showing trend beats a static count. Matte black with luminous markings also suits the real late-night scene. Loses only on audience identification -- night aviation is not this cohort's ritual.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-night-flight-six-pack-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/signals-instruments-night-flight-six-pack.webp"
+    },
+    {
+      "id": "challenger-crt-arcade",
+      "label": "Co-op Cabinet",
+      "verdict": "competitive",
+      "lineage": "pixel-art arcade cabinet screens, scanlines and phosphor bloom",
+      "thesis": "The trip as a co-op cabinet: everyone on one screen, and palette law carries every state.",
+      "palette": ["#0A0410", "#F8F4E8", "#38C7F0", "#F2C14A", "#E8447C"],
+      "materials": ["phosphor glass", "scanline gaps", "integer-scaled sprites"],
+      "viewport": "Phosphor-black field, trip name in 8x8 caps pinned to the top edge, six tiles as sprite panels with their counts set as score digits.",
+      "risk": "Scanlines behind a money ledger cost legibility exactly where this product cannot afford to lose it.",
+      "case": "Wins audience identification outright -- arcade nostalgia is native to 18-35 -- and its palette-law state encoding is a genuinely disciplined system. Loses clarity: 8x8 caps cannot carry expense rows or long member names, and integer scaling fights a fluid phone layout.",
+      "hero": "https://impeccable.style/worlds/cards/medium-native-crt-arcade-pixel-glow-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/medium-native-crt-arcade-pixel-glow.webp"
+    },
+    {
+      "id": "challenger-bitmap-specimen",
+      "label": "Bitmap Specimen",
+      "verdict": "competitive",
+      "lineage": "Emigre bitmap type specimens",
+      "thesis": "One face at five sizes, so the number you actually need is the biggest thing on the page.",
+      "palette": ["#16151A", "#FBFAF6", "#FF4D18", "#8E8B9E"],
+      "materials": ["newsprint stock", "halftone", "dot-matrix"],
+      "viewport": "Your balance set as a coarse bitmap headline at poster scale, with the expense manifest below it in a fine grotesk at four descending steps.",
+      "risk": "Justified specimen columns and whole-pixel scaling fight a one-handed phone.",
+      "case": "Holds audience identification through the live Y2K revival, and specimen scale-stepping genuinely suits a product with one dominant number per screen. Loses clarity on dense rows and on responsive behaviour.",
+      "hero": "https://impeccable.style/worlds/cards/emigre-bitmap-specimen-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/emigre-bitmap-specimen.webp"
+    },
+    {
+      "id": "challenger-parametric",
+      "label": "Parametric Identity",
+      "verdict": "declined",
+      "lineage": "generative parametric brand systems",
+      "thesis": "Each trip reseeds its own identity from its invite code.",
+      "palette": ["#2B2D42", "#EDF2F4", "#8D99AE", "#EF233C"],
+      "materials": ["flat vector surfaces", "algorithmic harmonies"],
+      "viewport": "A parametric mark reseeded per trip, its palette spilling outward into every control and divider.",
+      "risk": "A palette that varies per trip makes money colours mean different things in different trips.",
+      "case": "Fails product clarity outright for an Operate surface. Someone opens this twenty times a day and needs owed and owing to be the same colour every single time.",
+      "kept": "Systemic derivation from a single seed.",
+      "hero": "https://impeccable.style/worlds/cards/generative-parametric-identity-hero.webp"
+    },
+    {
+      "id": "challenger-miura",
+      "label": "Deployable Sheet",
+      "verdict": "declined",
+      "lineage": "Miura-fold deployable sheets",
+      "thesis": "The trip folds from a hand-sized packet into one rigid tessellated field.",
+      "palette": ["#F7F6F2", "#C9A227", "#6E7B8B", "#1D2023"],
+      "materials": ["matte sheet", "gold foil", "scored creases"],
+      "viewport": "A compact packet that deploys in one pull into a tessellated itinerary field of linked crease cells.",
+      "risk": "Fold interactions are the wrong cost to charge someone using this one-handed at midnight.",
+      "case": "Loses both axes. Miura folding is an aerospace reference this audience does not hold, and 'misfolded' and 'collapsed' are not states this product has.",
+      "kept": "One control propagating visibly across the entire structure.",
+      "hero": "https://impeccable.style/worlds/cards/paper-folds-pleats-deployable-miura-orbit-sheet-hero.webp"
+    },
+    {
+      "id": "challenger-cloud-edge",
+      "label": "Iridescent Edge",
+      "verdict": "declined",
+      "lineage": "diffracting cloud edges and spectral banding",
+      "thesis": "Colour lives only at the edges while the reading field stays achromatic.",
+      "palette": ["#FBFCFD", "#5A6470", "#A8E6CF", "#F2B8C6", "#B8A9E0"],
+      "materials": ["diffuse white ground", "hairline spectral bands"],
+      "viewport": "A near-white field with pastel spectral hairlines marking whichever band is active.",
+      "risk": "Pastel hairlines cannot carry money states and fail the contrast this product needs at night.",
+      "case": "Loses both axes. Atmospheric optics is nobody's ritual here, and low-contrast pastels break the accessibility floor PRODUCT.md records for one-handed, low-light, late-night use.",
+      "kept": "Strict restraint in where colour is permitted to live at all.",
+      "hero": "https://impeccable.style/worlds/cards/clouds-storms-auroras-iridescent-cloud-edge-hero.webp"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "steer": true,
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "What a trip-planning app ships, executed impeccably.",
+    "palette": ["#FFFFFF", "#0F172A", "#0EA5A4", "#F97362"],
+    "materials": ["soft rounded cards", "destination photography"],
+    "viewport": "A hero destination photograph, rounded summary cards, and a tab bar exactly where a visitor expects them.",
+    "risk": "Indistinguishable from every other travel app, by design."
+  },
+  "buildPath": { "value": "code" }
+}

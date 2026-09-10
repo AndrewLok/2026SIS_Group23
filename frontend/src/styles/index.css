@@ -1,0 +1,241 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/saira/standard.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+
+/*
+  Voyager — night instrument panel.
+  Direction contract: .impeccable/surfaces/src-pages-tripoverview-tsx.md
+  Dark only, by decision: the recorded scene is late night, in a car, low light.
+  Every neutral is tinted off the panel hue; nothing here is a pure grey or a pure black.
+*/
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-sans: 'Saira Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: var(--font-sans);
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+    /* Instrument materials */
+    --color-panel: var(--panel);
+    --color-face: var(--face);
+    --color-face-raised: var(--face-raised);
+    --color-bezel: var(--bezel);
+    --color-bezel-edge: var(--bezel-edge);
+
+    /* Instrument signals. Fixed meanings, never restyled per trip. */
+    --color-radium: var(--radium);
+    --color-caution: var(--caution);
+    --color-warning: var(--warning);
+    --color-placard: var(--placard);
+
+    /* Money semantics, derived from instrument signal meanings, not invented. */
+    --color-owed: var(--radium);
+    --color-owing: var(--caution);
+
+    /* shadcn semantic surface */
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+
+    /* Machined, not soft. Gauges are round; plates are precise. */
+    --radius-sm: calc(var(--radius) * 0.5);
+    --radius-md: var(--radius);
+    --radius-lg: calc(var(--radius) * 1.5);
+    --radius-xl: calc(var(--radius) * 2);
+    --radius-2xl: calc(var(--radius) * 3);
+    --radius-3xl: calc(var(--radius) * 4);
+    --radius-4xl: calc(var(--radius) * 5);
+}
+
+:root {
+    color-scheme: dark;
+
+    /* Raw instrument palette, taken from the chosen world's quality-bar board. */
+    --panel: #0b0d0f;
+    --face: #0f1114;
+    --face-raised: #14171b;
+    --bezel: #2a2d31;
+    --bezel-edge: #3a3e44;
+    --luminous: #f2f5f5;
+    --placard: #93a0a5;
+    --radium: #7cff9e;
+    --caution: #ffb000;
+    --warning: #ff3b30;
+
+    /* Semantic mapping. Radium is data and active state; amber is attention;
+       red is destructive only and never decorates. */
+    --background: var(--panel);
+    --foreground: var(--luminous);
+    --card: var(--face);
+    --card-foreground: var(--luminous);
+    --popover: var(--face-raised);
+    --popover-foreground: var(--luminous);
+    --primary: var(--radium);
+    --primary-foreground: var(--panel);
+    --secondary: var(--bezel);
+    --secondary-foreground: var(--luminous);
+    --muted: var(--face-raised);
+    --muted-foreground: var(--placard);
+    --accent: var(--bezel);
+    --accent-foreground: var(--radium);
+    --destructive: var(--warning);
+    --border: var(--bezel);
+    --input: var(--bezel-edge);
+    --ring: var(--radium);
+
+    --chart-1: var(--radium);
+    --chart-2: var(--caution);
+    --chart-3: #5ad2e0;
+    --chart-4: #c08cf5;
+    --chart-5: var(--placard);
+
+    --sidebar: var(--face);
+    --sidebar-foreground: var(--luminous);
+    --sidebar-primary: var(--radium);
+    --sidebar-primary-foreground: var(--panel);
+    --sidebar-accent: var(--bezel);
+    --sidebar-accent-foreground: var(--radium);
+    --sidebar-border: var(--bezel);
+    --sidebar-ring: var(--radium);
+
+    --radius: 0.25rem;
+
+    /* Depth. Real offset and blur; the inset is a recessed instrument face. */
+    --shadow-panel: 0 1px 0 0 var(--bezel-edge) inset, 0 8px 24px -12px #000000;
+    --shadow-recessed: 0 2px 6px 0 #00000080 inset;
+
+    /* Phosphor. A luminous marking actually glows; this is material, not decoration. */
+    --glow-radium: 0 0 12px -2px #7cff9e66;
+    --glow-caution: 0 0 12px -2px #ffb00066;
+
+    /* Placard lettering: letterspaced technical caps. */
+    --placard-tracking: 0.12em;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground font-sans antialiased;
+    }
+
+    /* Values are measurements: tabular, so digits never shift as numbers change. */
+    .tabular,
+    output,
+    time,
+    [data-slot="value"] {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1, "zero" 1;
+    }
+
+    /* Condensed instrument numerals for large readings. */
+    .instrument-value {
+        font-family: var(--font-sans);
+        font-stretch: 82%;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+    }
+
+    /* Placard caps sit beneath their instrument, never above a heading. */
+    .placard {
+        font-family: var(--font-sans);
+        font-stretch: 92%;
+        text-transform: uppercase;
+        letter-spacing: var(--placard-tracking);
+        color: var(--placard);
+    }
+
+    /*
+      Browser surfaces. These ship with defaults that belong to no design system,
+      so they are themed off the panel palette like everything else.
+    */
+    ::selection {
+        background: var(--radium);
+        color: var(--panel);
+    }
+
+    :where(input, textarea, [contenteditable]) {
+        caret-color: var(--radium);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--radium);
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
+    }
+
+    a {
+        text-underline-offset: 0.2em;
+        text-decoration-thickness: 1px;
+    }
+
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--bezel-edge) var(--panel);
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--panel);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--bezel-edge);
+        border: 2px solid var(--panel);
+        border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--placard);
+    }
+
+    /* Honour the setting rather than animating regardless. */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}

@@ -1,0 +1,20 @@
+---
+version: 1
+slug: "src-pages-tripoverview-tsx"
+primary_target: "src/pages/TripOverview.tsx"
+related_targets: ["src/styles/index.css"]
+---
+
+## Direction contract
+
+THESIS: The overview is an instrument panel, not a dashboard of cards. Six instruments each own exactly one truth and are read in a practiced cross-check sweep, so the two questions answer themselves before any navigation is offered. It refuses the travel-app arrangement outright: no hero destination photograph, no soft rounded summary cards, no teal accent.
+
+OWN-WORLD: Panel black #0B0D0F ground under raised instrument faces #0F1114; bezels and dividers in plate gray #2A2D31 with satin edges and corner fixings. Labels are letterspaced placard caps in luminous white #F2F5F5. Radium green #7CFF9E is the data colour and the only active state. Caution amber #FFB000 marks a figure needing attention. Warning red #FF3B30 is reserved for destructive confirms and never decorates. Values set in condensed tabular numerals. Plates and bezels throughout, never a floating card, never a nested one. The dark panel keeps the field achromatic so one signal colour reads as the only chromatic thing on screen, and semantic colours are fixed across every trip so a figure never changes meaning between them.
+
+STORY: A member opens Voyager mid-trip and sweeps the panel. NEXT MOVEMENT says what the group agreed to next. YOUR BALANCE says where they stand, amber when they owe and green when they are owed. Both carry trend as well as value, so a number that is moving says so before it matters. They trust the figures because every instrument shows its own working, and because they know the whole group is reading the same panel.
+
+FIRST VIEWPORT: Trip name as a placard header at top left, countdown hard-right as a tabular value; a row of bezelled member initials beneath it. Then two full-width instrument strips at double height, NEXT MOVEMENT then YOUR BALANCE, each label-left, value-right, trend beneath. Then six instruments in a 2x3 grid, each a bezelled plate carrying its live count as the value with placard caps below: MEMBERS, VOTING, CALENDAR, EXPENSES, FUEL, CHAT. A five-item tab bar is pinned to the bottom edge with the active item in radium green. The primary action, SETTLE UP, sits inside the balance strip within thumb reach.
+
+FORM: The night instrument six-pack, catalog id signals-instruments-night-flight-six-pack. Dealt as challenger 5 of 6 and scored competitive; chosen by the user over the assigned direction, which was candidate 4 of my grounded list, Consignment Manifest. Seed key 488f563a.
+
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
