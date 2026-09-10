@@ -1,7 +1,11 @@
 package com.voyager.backend.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,21 +21,35 @@ public class TripController {
 
     private final TripRepository tripRepository;
 
-    // Direct repository injection to skip creating a Service layer for now
     public TripController(TripRepository tripRepository) {
         this.tripRepository = tripRepository;
     }
 
+    @GetMapping
+    public ResponseEntity<List<Trip>> getAllTrips() {
+        return ResponseEntity.ok(tripRepository.findAll());
+    }
+
     @PostMapping
     public ResponseEntity<Trip> createTrip(@RequestBody CreateTripRequest request) {
-        Trip trip = Trip.builder()
-                .destination(request.destination())
-                .startDate(request.startDate())
-                .endDate(request.endDate())
-                .budgetCap(request.budgetCap())
-                .build();
+        String randomCode = Long.toHexString(Double.doubleToLongBits(Math.random())).substring(0, 6).toUpperCase();
+
+        Trip trip = new Trip(
+                request.destination(),
+                request.startDate(),
+                request.endDate(),
+                request.budgetCap(),
+                randomCode
+        );
 
         Trip savedTrip = tripRepository.save(trip);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedTrip);
+    }
+
+    @PostMapping("/join/{code}")
+    public ResponseEntity<?> joinTripByCode(@PathVariable String code) {
+        return tripRepository.findByJoinCode(code.toUpperCase())
+                .map(trip -> ResponseEntity.ok("Successfully joined trip to " + trip.getDestination()))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid join code"));
     }
 }
