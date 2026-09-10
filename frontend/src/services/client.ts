@@ -88,6 +88,7 @@ export const api = {
     send: mockChat.send,
     subscribe: mockChat.subscribe,
     unreadCount: mockChat.unreadCount,
+    firstUnreadId: mockChat.firstUnreadId,
     markRead: mockChat.markRead,
   },
   /** Demo-only escape hatch, surfaced in trip settings. */

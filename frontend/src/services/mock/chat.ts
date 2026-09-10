@@ -49,6 +49,25 @@ export function unreadCount(channelId: string, userId: string): number {
   ).length
 }
 
+/**
+ * The message the unread divider goes above, or null when nothing is unread.
+ *
+ * This has to be resolved from the read marker rather than by counting back from
+ * the end: the unread count skips your own messages, so an offset from the tail
+ * lands past the real boundary whenever you have spoken recently.
+ */
+export function firstUnreadId(channelId: string, userId: string): string | null {
+  const db = read()
+  const lastRead = db.channelReads[`${userId}:${channelId}`]
+  const ordered = db.messages
+    .filter((m) => m.channel_id === channelId)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+  const first = ordered.find(
+    (m) => m.author_id !== userId && (!lastRead || m.created_at > lastRead),
+  )
+  return first?.id ?? null
+}
+
 /** Called when the chat screen is opened, which is what clears the tile count. */
 export async function markRead(channelId: string): Promise<void> {
   const userId = read().sessionUserId

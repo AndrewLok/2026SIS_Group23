@@ -78,15 +78,15 @@ export function MoneyInput({
   className,
   ...aria
 }: MoneyInputProps) {
-  const [raw, setRaw] = React.useState<string>(
-    valueCents === null ? '' : (valueCents / 100).toFixed(2),
-  )
-  const [focused, setFocused] = React.useState(false)
-
-  React.useEffect(() => {
-    if (focused) return
-    setRaw(valueCents === null ? '' : (valueCents / 100).toFixed(2))
-  }, [valueCents, focused])
+  /*
+   * The draft holds raw keystrokes only while the field is being edited, so a
+   * half-typed "42." is not rewritten under the cursor. Outside editing the
+   * value is derived from the prop during render rather than synced by an
+   * effect, which would otherwise fight whoever owns the value.
+   */
+  const [draft, setDraft] = React.useState<string | null>(null)
+  const formatted = valueCents === null ? '' : (valueCents / 100).toFixed(2)
+  const raw = draft ?? formatted
 
   return (
     <div className={cn('relative', className)}>
@@ -104,15 +104,11 @@ export function MoneyInput({
         inputMode="decimal"
         autoComplete="off"
         className="pl-7 font-mono tabular-nums"
-        onFocus={() => setFocused(true)}
-        onBlur={() => {
-          setFocused(false)
-          const cents = parseMoneyToCents(raw)
-          setRaw(cents === null ? '' : (cents / 100).toFixed(2))
-        }}
+        onFocus={() => setDraft(raw)}
+        onBlur={() => setDraft(null)}
         onChange={(event) => {
           const next = event.target.value
-          setRaw(next)
+          setDraft(next)
           onChangeCents(next.trim() === '' ? null : parseMoneyToCents(next))
         }}
         {...aria}
