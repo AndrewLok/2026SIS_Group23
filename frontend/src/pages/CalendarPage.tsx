@@ -97,7 +97,7 @@ function AgendaView({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{item.title}</span>
-                    <span className="placard block text-[0.6875rem]">
+                    <span className="placard block text-xs">
                       {sourceLabel[item.source]}
                       {item.belongsTo ? ' · personal' : ''}
                     </span>
@@ -150,7 +150,7 @@ function MonthView({
 
       <div className="grid grid-cols-7 gap-1">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <span key={i} className="placard py-1 text-center text-[0.6875rem]">
+          <span key={i} className="placard py-1 text-center caption">
             {d}
           </span>
         ))}

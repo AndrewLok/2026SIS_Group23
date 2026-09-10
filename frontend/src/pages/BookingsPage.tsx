@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Bed, Car, Loader2, Luggage, Plane, Plus, Trash2 } from 'lucide-react'
+import { Bed, Car, Loader2, Luggage, MoveRight, Plane, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -137,8 +137,8 @@ function AddBookingDrawer({
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button>
-          <Plus size={15} aria-hidden="true" />
+        <Button className="min-h-11">
+          <Plus size={16} aria-hidden="true" />
           Add booking
         </Button>
       </DrawerTrigger>
@@ -325,9 +325,25 @@ function BookingCard({
           <SpecRow
             label={booking.type === 'stay' ? 'Where' : 'Route'}
             value={
-              booking.type === 'stay'
-                ? booking.destination || '—'
-                : `${booking.origin || '—'} → ${booking.destination || '—'}`
+              booking.type === 'stay' ? (
+                booking.destination || 'Not set'
+              ) : (
+                /*
+                 * The route arrow is drawn from the icon set. A Unicode arrow
+                 * standing in for an icon is the one thing the craft floor bans
+                 * outright, and it renders in whatever the system font decides.
+                 */
+                <span className="inline-flex items-center gap-2">
+                  {booking.origin || 'Not set'}
+                  <MoveRight
+                    size={14}
+                    strokeWidth={1.75}
+                    className="text-placard"
+                    aria-label="to"
+                  />
+                  {booking.destination || 'Not set'}
+                </span>
+              )
             }
           />
         ) : null}

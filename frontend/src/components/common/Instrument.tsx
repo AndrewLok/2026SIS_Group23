@@ -147,15 +147,25 @@ export function Instrument({
    * raw number puts "59934" on a face that means $599.34.
    */
   const scaleFontSize = (13 / size) * 200
-  const scaleNumbers = showScale
-    ? [
-        {
-          key: 0,
-          at: polar(cx, cy, trackRadius - 24, SWEEP_START + SWEEP_DEGREES),
-          label: formatScale(max),
-        },
-      ]
-    : []
+  const topOfRange = formatScale(max)
+  /*
+   * A centre-anchored label at the sweep's end overruns the track once it is
+   * more than a few glyphs, and "$599.34" ends up sitting on the arc terminus
+   * and the tick ring. Money faces therefore carry no on-face numeral: the
+   * caption under every instrument already states the same figure, so the
+   * choice is between saying it legibly once and saying it twice with one of
+   * them broken.
+   */
+  const scaleNumbers =
+    showScale && topOfRange.length <= 4
+      ? [
+          {
+            key: 0,
+            at: polar(cx, cy, trackRadius - 24, SWEEP_START + SWEEP_DEGREES),
+            label: topOfRange,
+          },
+        ]
+      : []
 
   return (
     <div className={cn('relative', className)} style={{ width: size, height: size }}>
@@ -244,7 +254,7 @@ export function Instrument({
         >
           <line
             x1={cx}
-            y1={cy + 12}
+            y1={cy + 5}
             x2={cx}
             y2={cy - (trackRadius - 18)}
             stroke={stroke}

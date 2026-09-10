@@ -189,6 +189,18 @@
     }
 
     /*
+      The caption tier. 11px, and deliberately below the 12px floor that governs
+      interactive type: these are non-interactive annotations sitting beside
+      something already legible — weekday heads, a day divider, a message
+      timestamp, a fieldset legend, a FOR/AGAINST marker. Nothing you can tap
+      may use it.
+    */
+    .caption {
+        font-size: 0.6875rem;
+        line-height: 1.2;
+    }
+
+    /*
       Needle travel is damped, the way a real gauge settles. Exponential
       ease-out from wherever it already is, never a snap to the new value.
     */

@@ -125,8 +125,8 @@ function AddLegDrawer({
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button>
-          <Plus size={15} aria-hidden="true" />
+        <Button className="min-h-11">
+          <Plus size={16} aria-hidden="true" />
           Add a leg
         </Button>
       </DrawerTrigger>
@@ -214,7 +214,7 @@ function AddLegDrawer({
             </Field>
 
             <fieldset className="flex flex-col gap-3">
-              <legend className="placard text-[0.6875rem]">Who is chipping in</legend>
+              <legend className="placard caption">Who is chipping in</legend>
               {members.map((m) => (
                 <div key={m.id} className="flex items-center gap-3">
                   <Checkbox

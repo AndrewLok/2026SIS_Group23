@@ -321,7 +321,6 @@ export function TripOverviewPage() {
           value={unread}
           max={Math.max(1, messageCount)}
           unit={`unread of ${messageCount}`}
-          tone={unread > 0 ? 'caution' : 'normal'}
         />
       </div>
 

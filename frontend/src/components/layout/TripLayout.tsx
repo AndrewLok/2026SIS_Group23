@@ -123,7 +123,7 @@ function BottomNav({ tripId }: { tripId: string }) {
               {({ isActive }) => (
                 <>
                   <item.icon size={19} strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
-                  <span className="placard text-[0.6875rem] leading-none">{item.label}</span>
+                  <span className="placard text-xs leading-none">{item.label}</span>
                 </>
               )}
             </NavLink>
