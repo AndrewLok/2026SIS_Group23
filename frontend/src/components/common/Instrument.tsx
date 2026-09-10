@@ -104,6 +104,7 @@ export function Instrument({
   const cy = 100
   const trackRadius = 82
   const valueAngle = angleFor(value, min, max)
+  const filled = (valueAngle - SWEEP_START) / SWEEP_DEGREES
   const stroke = toneVar[tone]
 
   // Ticks: a major every fifth, minors between, across the full sweep.
@@ -159,16 +160,22 @@ export function Instrument({
           />
         ) : null}
 
-        {/* The reading. */}
-        {valueAngle > SWEEP_START ? (
-          <path
-            d={arcPath(cx, cy, trackRadius, SWEEP_START, valueAngle)}
-            fill="none"
-            stroke={stroke}
-            strokeWidth={5}
-            strokeLinecap="round"
-          />
-        ) : null}
+        {/*
+          The reading. Drawn as the full sweep and revealed with a dash offset,
+          so the needle and the arc can settle together on power-up rather than
+          the arc snapping into place under a moving needle.
+        */}
+        <path
+          d={arcPath(cx, cy, trackRadius, SWEEP_START, SWEEP_START + SWEEP_DEGREES)}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={5}
+          strokeLinecap="round"
+          pathLength={1}
+          strokeDasharray={1}
+          className="instrument-arc"
+          style={{ strokeDashoffset: 1 - filled }}
+        />
 
         {ticks.map((t) => (
           <line
@@ -200,7 +207,10 @@ export function Instrument({
         ))}
 
         {/* Needle, damped rather than snapped when the value changes. */}
-        <g className="instrument-needle" transform={`rotate(${valueAngle} ${cx} ${cy})`}>
+        <g
+          className="instrument-needle"
+          style={{ transform: `rotate(${valueAngle}deg)`, transformOrigin: `${cx}px ${cy}px` }}
+        >
           <line
             x1={cx}
             y1={cy + 12}

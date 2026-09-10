@@ -187,9 +187,42 @@
         transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    .instrument-arc {
+        transition: stroke-dashoffset 620ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /*
+      Power-on self test. A real panel sweeps its instruments from rest when it
+      comes alive, which is the one authored moment this app gets: the needle
+      and its arc leave the peg together and settle on the reading. Only a
+      `from` keyframe, so each gauge lands on its own value rather than a
+      hardcoded one.
+    */
+    @keyframes instrument-power-on {
+        from {
+            transform: rotate(135deg);
+        }
+    }
+
+    @keyframes instrument-arc-power-on {
+        from {
+            stroke-dashoffset: 1;
+        }
+    }
+
+    .instrument-needle {
+        animation: instrument-power-on 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    .instrument-arc {
+        animation: instrument-arc-power-on 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
     @media (prefers-reduced-motion: reduce) {
-        .instrument-needle {
+        .instrument-needle,
+        .instrument-arc {
             transition: none;
+            animation: none;
         }
     }
 
