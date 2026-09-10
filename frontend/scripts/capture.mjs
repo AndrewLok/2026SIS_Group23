@@ -142,7 +142,14 @@ async function shoot(name, width, height, url) {
     document.getElementById('capture-style')?.remove();
     const style = document.createElement('style');
     style.id = 'capture-style';
-    style.textContent = '*{animation:none!important} header,nav,form{position:static!important}';
+    // backdrop-filter on a sticky bar that has just been made static composites
+    // badly in a beyond-viewport capture and leaves ghosted icons near the top,
+    // which reads as a duplicated nav that does not exist.
+    style.textContent = [
+      '*{animation:none!important}',
+      'header,nav,form{position:static!important}',
+      '*{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}',
+    ].join(' ');
     document.head.appendChild(style);
     return true;
   })()`)

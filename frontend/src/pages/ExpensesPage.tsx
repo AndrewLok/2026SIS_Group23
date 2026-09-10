@@ -339,7 +339,10 @@ export function ExpensesPage() {
     byDay.set(key, [...(byDay.get(key) ?? []), expense])
   }
 
-  const name = (id: string) => profiles.get(id)?.displayName ?? 'someone'
+  // Someone who has left the trip is still owed what they paid, so they can
+  // appear here without being in the member list any more.
+  const name = (id: string) =>
+    profiles.get(id)?.displayName ?? 'someone who has left the trip'
 
   return (
     <div className="flex flex-col gap-6">

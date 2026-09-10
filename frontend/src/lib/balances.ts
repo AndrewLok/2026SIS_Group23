@@ -75,7 +75,17 @@ export function shareForMember(
   return sharesFor(expense, memberIds, fuelLegs).get(userId) ?? 0
 }
 
-/** Paid, owed and net for every member. Members with no activity still appear. */
+/**
+ * Paid, owed and net for everyone the ledger touches. Members with no activity
+ * still appear.
+ *
+ * The returned list is deliberately wider than the current member list: someone
+ * who has left the trip stops sharing costs, but is still owed whatever they
+ * already paid for. Returning only current members loses their money from the
+ * netting, and the settlement it feeds then proposes transfers that never clear.
+ * Splitting still uses current members only, which is what the removal confirm
+ * dialog warns about when it states the new per-head figure.
+ */
 export function computeBalances(
   expenses: Expense[],
   memberIds: string[],
@@ -83,20 +93,28 @@ export function computeBalances(
 ): MemberBalance[] {
   const paid = new Map<string, number>()
   const owed = new Map<string, number>()
-  for (const id of memberIds) {
+  const involved: string[] = []
+
+  const include = (id: string) => {
+    if (paid.has(id)) return
     paid.set(id, 0)
     owed.set(id, 0)
+    involved.push(id)
   }
 
+  for (const id of memberIds) include(id)
+
   for (const expense of expenses) {
+    include(expense.paidBy)
     paid.set(expense.paidBy, (paid.get(expense.paidBy) ?? 0) + expense.amountCents)
     const shares = sharesFor(expense, memberIds, fuelLegs)
     for (const [userId, share] of shares) {
+      include(userId)
       owed.set(userId, (owed.get(userId) ?? 0) + share)
     }
   }
 
-  return memberIds.map((userId) => {
+  return involved.map((userId) => {
     const paidCents = paid.get(userId) ?? 0
     const owedCents = owed.get(userId) ?? 0
     return { userId, paidCents, owedCents, netCents: paidCents - owedCents }
