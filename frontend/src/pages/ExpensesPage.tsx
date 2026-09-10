@@ -8,6 +8,17 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Progress } from '@/components/ui/progress'
 import {
   Select,
@@ -28,7 +39,7 @@ import {
 import { Field } from '@/components/common/Field'
 import { MoneyInput } from '@/components/common/money'
 import { CategoryBadge, PageHeader, Placard } from '@/components/common/chrome'
-import { EmptyState, ListSkeleton } from '@/components/common/state'
+import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import {
   useBookings,
   useCreateExpense,
@@ -114,8 +125,8 @@ function AddExpenseDrawer({
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button>
-          <Plus size={15} aria-hidden="true" />
+        <Button className="min-h-11">
+          <Plus size={16} aria-hidden="true" />
           Add expense
         </Button>
       </DrawerTrigger>
@@ -252,7 +263,7 @@ function ExpenseRow({
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-medium">{expense.description}</p>
           {fromFuel ? (
-            <Placard className="border-[color:var(--chart-3)]/40 text-[color:var(--chart-3)]">
+            <Placard>
               <Fuel size={10} className="mr-1" aria-hidden="true" />
               fuel
             </Placard>
@@ -277,15 +288,29 @@ function ExpenseRow({
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span className="tabular text-sm">{formatMoney(expense.amountCents)}</span>
         {!fromFuel ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-placard"
-            onClick={() => onDelete(expense.id)}
-          >
-            <Trash2 size={13} aria-hidden="true" />
-            <span className="sr-only">Delete {expense.description}</span>
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-11 text-placard">
+                <Trash2 size={15} aria-hidden="true" />
+                <span className="sr-only">Delete {expense.description}</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this expense?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {expense.description}, {formatMoney(expense.amountCents)}. Deleting it rewrites
+                  every member's balance, including what other people owe each other.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep it</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(expense.id)}>
+                  Delete expense
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         ) : null}
       </div>
     </li>
@@ -312,6 +337,10 @@ export function ExpensesPage() {
   if (trip.isPending || members.isPending || expenses.isPending || fuelLegs.isPending) {
     return <ListSkeleton rows={5} />
   }
+
+  // A failed load must say so rather than falling through to an empty state.
+  const queries = [trip, members, expenses, fuelLegs, bookings]
+  if (anyFailed(queries)) return <ScreenError queries={queries} />
 
   const memberIds = (members.data ?? []).map((m) => m.userId)
   const memberProfiles = (members.data ?? []).map((m) => m.profile)

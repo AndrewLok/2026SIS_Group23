@@ -5,10 +5,12 @@
  */
 
 import { Link, useParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AvatarStack } from '@/components/common/people'
 import { Placard, ReadingStrip, SectionTile } from '@/components/common/chrome'
 import { MoneyText } from '@/components/common/money'
+import { ScreenError, anyFailed } from '@/components/common/state'
 import {
   useBookings,
   useChannels,
@@ -16,16 +18,19 @@ import {
   useFuelLegs,
   useIdeas,
   useMembers,
+  useMessages,
   useTrip,
 } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
 import { api } from '@/services/client'
-import { computeBalances, totalSpent } from '@/lib/balances'
+import { computeBalances, shareForMember, totalSpent } from '@/lib/balances'
 import { nextUp, toCalendarItems } from '@/lib/calendar'
 import { estimateTrip } from '@/lib/estimate'
 import { daysUntil, formatDateRange, formatDayTime, formatTime, isUnderway } from '@/lib/dates'
 import { formatMoney, formatMoneyCompact } from '@/lib/money'
 import { agreeThreshold } from '@/lib/voting'
+import { fuelShareFor, totalFuelCents } from '@/lib/fuel'
+import type { Trend } from '@/components/common/Instrument'
 
 function PanelSkeleton() {
   return (
@@ -55,6 +60,7 @@ export function TripOverviewPage() {
   const fuelLegs = useFuelLegs(tripId)
   const expenses = useExpenses(tripId)
   const channels = useChannels(tripId)
+  const messages = useMessages(channels.data?.[0]?.id)
 
   const pending =
     trip.isPending ||
@@ -65,6 +71,10 @@ export function TripOverviewPage() {
     expenses.isPending
 
   if (pending) return <PanelSkeleton />
+
+  // A failed load must say so rather than falling through to an empty state.
+  const queries = [trip, members, ideas, bookings, fuelLegs, expenses, channels]
+  if (anyFailed(queries)) return <ScreenError queries={queries} />
 
   if (!trip.data || !members.data) {
     return <p className="text-sm text-muted-foreground">This trip could not be loaded.</p>
@@ -86,6 +96,44 @@ export function TripOverviewPage() {
 
   const channelId = channels.data?.[0]?.id
   const unread = channelId ? api.chat.unreadCount(channelId, userId) : 0
+  const messageCount = messages.data?.length ?? 0
+
+  /*
+   * Every dial needs a real denominator or the needle means nothing. These are
+   * the honest ones: group capacity, proposals still open, how much of the plan
+   * has a time on it, your position against your own share, your fuel against
+   * the trip's, and unread against everything said.
+   */
+  const spent = totalSpent(allExpenses)
+  const perHeadShare = memberIds.length > 0 ? Math.round(spent / memberIds.length) : 0
+  const agreedCount = allIdeas.filter((i) => i.status === 'agreed').length
+  const schedulable = agreedCount + allBookings.length
+  const fuelTotal = totalFuelCents(allLegs)
+  const myFuel = fuelShareFor(allLegs, userId)
+
+  /*
+   * Trend on the balance is derived from the newest expense, so it says which
+   * way the last movement pushed you. No trend is shown where none can be
+   * derived; an arrow that means nothing is worse than no arrow.
+   */
+  const newest = allExpenses.reduce<(typeof allExpenses)[number] | null>(
+    (latest, e) => (!latest || e.spentAt > latest.spentAt ? e : latest),
+    null,
+  )
+  const balanceTrend: Trend | undefined = !newest
+    ? undefined
+    : newest.paidBy === userId
+      ? 'up'
+      : shareForMember(newest, userId, memberIds, allLegs) > 0
+        ? 'down'
+        : 'steady'
+  const trendLabel = !newest
+    ? undefined
+    : newest.paidBy === userId
+      ? `since you paid for ${newest.description.toLowerCase()}`
+      : balanceTrend === 'down'
+        ? `since ${newest.description.toLowerCase()}`
+        : 'unchanged by the last expense'
 
   const countdown = daysUntil(trip.data.startDate)
   const underway = isUnderway(trip.data.startDate, trip.data.endDate)
@@ -97,7 +145,6 @@ export function TripOverviewPage() {
     allowanceCents: trip.data.allowanceCents,
     memberCount: memberIds.length,
   })
-  const spent = totalSpent(allExpenses)
 
   const balanceDetail =
     net === 0 ? (
@@ -183,19 +230,85 @@ export function TripOverviewPage() {
           label="Your balance"
           value={formatMoney(Math.abs(net))}
           tone={net < 0 ? 'caution' : 'normal'}
+          trend={balanceTrend}
+          trendLabel={trendLabel}
           detail={balanceDetail}
           action={
-            <Link
-              to={`/trips/${tripId}/expenses`}
-              className="placard text-[0.6875rem] text-radium underline underline-offset-4"
-            >
-              Settle up
-            </Link>
+            <Button asChild size="sm" className="min-h-11 w-full sm:w-auto">
+              <Link to={`/trips/${tripId}/expenses`}>Settle up</Link>
+            </Button>
           }
         />
       </div>
 
-      <section className="plate flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-5 py-4">
+      {/*
+        Every dial reads against a real range, labelled on its own face. An
+        invented ceiling makes the needle decorative, and a needle pegged at
+        full sweep by construction says nothing at all.
+      */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <SectionTile
+          to={`/trips/${tripId}/members`}
+          label="Members"
+          display={String(memberIds.length)}
+          value={memberIds.length}
+          max={8}
+          unit={`of 8 · ${agreeThreshold(memberIds.length)} to agree`}
+        />
+        <SectionTile
+          to={`/trips/${tripId}/voting`}
+          label="Voting"
+          display={String(openIdeas.length)}
+          value={openIdeas.length}
+          max={Math.max(1, allIdeas.length)}
+          unit={`open of ${allIdeas.length} proposed`}
+          tone={openIdeas.length > 0 ? 'caution' : 'normal'}
+        />
+        <SectionTile
+          to={`/trips/${tripId}/calendar`}
+          label="Calendar"
+          display={String(items.length)}
+          value={items.length}
+          max={Math.max(1, schedulable)}
+          unit={`placed of ${schedulable} agreed`}
+        />
+        <SectionTile
+          to={`/trips/${tripId}/expenses`}
+          label="Expenses"
+          display={formatMoneyCompact(Math.abs(net))}
+          value={Math.abs(net)}
+          max={Math.max(1, perHeadShare)}
+          formatScale={formatMoneyCompact}
+          unit={
+            net < 0
+              ? `you owe · share ${formatMoneyCompact(perHeadShare)}`
+              : net > 0
+                ? `owed to you · share ${formatMoneyCompact(perHeadShare)}`
+                : 'square'
+          }
+          tone={net < 0 ? 'caution' : 'normal'}
+        />
+        <SectionTile
+          to={`/trips/${tripId}/fuel`}
+          label="Fuel"
+          display={formatMoneyCompact(myFuel)}
+          value={myFuel}
+          max={Math.max(1, fuelTotal)}
+          formatScale={formatMoneyCompact}
+          unit={`your share of ${formatMoneyCompact(fuelTotal)}`}
+        />
+        <SectionTile
+          to={`/trips/${tripId}/chat`}
+          label="Chat"
+          display={String(unread)}
+          value={unread}
+          max={Math.max(1, messageCount)}
+          unit={`unread of ${messageCount}`}
+          tone={unread > 0 ? 'caution' : 'normal'}
+        />
+      </div>
+
+      <section className="plate fixings flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-5 py-4">
         <span className="placard text-xs">{underway ? 'Spent so far' : 'Estimated total'}</span>
         <span className="tabular text-sm">
           {underway
@@ -213,62 +326,6 @@ export function TripOverviewPage() {
             : '.'}
         </p>
       </section>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <SectionTile
-          to={`/trips/${tripId}/members`}
-          label="Members"
-          display={String(memberIds.length)}
-          value={memberIds.length}
-          max={8}
-          unit={`${agreeThreshold(memberIds.length)} to agree`}
-        />
-        <SectionTile
-          to={`/trips/${tripId}/voting`}
-          label="Voting"
-          display={String(openIdeas.length)}
-          value={openIdeas.length}
-          max={Math.max(6, allIdeas.length)}
-          unit={openIdeas.length === 1 ? 'idea open' : 'ideas open'}
-          tone={openIdeas.length > 0 ? 'caution' : 'normal'}
-          cautionFrom={1}
-        />
-        <SectionTile
-          to={`/trips/${tripId}/calendar`}
-          label="Calendar"
-          display={String(items.length)}
-          value={items.length}
-          max={Math.max(8, items.length)}
-          unit={items.length === 1 ? 'item' : 'items'}
-        />
-        <SectionTile
-          to={`/trips/${tripId}/expenses`}
-          label="Expenses"
-          display={formatMoneyCompact(Math.abs(net))}
-          value={Math.abs(net)}
-          max={Math.max(10_000, Math.abs(net))}
-          unit={net < 0 ? 'you owe' : net > 0 ? 'owed to you' : 'square'}
-          tone={net < 0 ? 'caution' : 'normal'}
-        />
-        <SectionTile
-          to={`/trips/${tripId}/fuel`}
-          label="Fuel"
-          display={String(allLegs.length)}
-          value={allLegs.length}
-          max={Math.max(6, allLegs.length)}
-          unit={allLegs.length === 1 ? 'leg' : 'legs'}
-        />
-        <SectionTile
-          to={`/trips/${tripId}/chat`}
-          label="Chat"
-          display={String(unread)}
-          value={unread}
-          max={Math.max(10, unread)}
-          unit="unread"
-          tone={unread > 0 ? 'caution' : 'normal'}
-          cautionFrom={1}
-        />
-      </div>
 
       <p className="text-xs text-muted-foreground">
         Everything on this trip is seeded demo data, not real activity.

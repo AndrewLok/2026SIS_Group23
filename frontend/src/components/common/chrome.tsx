@@ -1,15 +1,18 @@
 /*
  * Panel chrome: the plates, placards and strips the instrument world is built
  * from. Nothing here is a card, and nothing nests inside anything else here.
+ *
+ * The field stays achromatic on purpose. Radium marks a live reading, amber a
+ * figure wanting attention, red destruction, and nothing else on screen carries
+ * chroma — which is what makes the one signal colour impossible to miss.
  */
 
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { InstrumentTone, Trend } from '@/components/common/Instrument'
-import { Instrument } from '@/components/common/Instrument'
+import { Instrument, TrendMark } from '@/components/common/Instrument'
 import type { ExpenseCategory, IdeaCategory } from '@/types'
 
 /** A bolted-on label plate. Sits under what it names, never above a heading. */
@@ -17,7 +20,7 @@ export function Placard({ children, className }: { children: ReactNode; classNam
   return (
     <span
       className={cn(
-        'placard inline-flex items-center justify-center rounded-sm border border-bezel px-2 py-1 text-[0.6875rem] leading-none',
+        'placard inline-flex items-center justify-center rounded-sm border border-bezel px-2 py-1 text-xs leading-none',
         className,
       )}
     >
@@ -62,6 +65,8 @@ export function ReadingStrip({
   value,
   detail,
   tone = 'normal',
+  trend,
+  trendLabel,
   action,
   className,
 }: {
@@ -69,21 +74,37 @@ export function ReadingStrip({
   value: string
   detail: ReactNode
   tone?: InstrumentTone
+  /** Only pass a trend that is actually derived; never decorate with one. */
+  trend?: Trend
+  trendLabel?: string
   action?: ReactNode
   className?: string
 }) {
   const color =
     tone === 'caution' ? 'var(--caution)' : tone === 'warning' ? 'var(--warning)' : 'var(--radium)'
+  const glow = tone === 'caution' ? 'glow-caution' : tone === 'warning' ? '' : 'glow-radium'
+
   return (
-    <section className={cn('plate px-5 py-4', className)}>
+    <section className={cn('plate fixings px-5 py-4', className)}>
       <div className="flex items-baseline justify-between gap-4">
         <span className="placard text-xs">{label}</span>
-        <span className="instrument-value text-2xl leading-none" style={{ color }}>
+        <span
+          className={cn('instrument-value text-2xl leading-none', glow)}
+          style={{ color }}
+        >
           {value}
         </span>
       </div>
+      {trend ? (
+        <div className="mt-1.5 flex items-center justify-end gap-1.5">
+          <TrendMark trend={trend} stroke={color} inline />
+          {trendLabel ? (
+            <span className="placard text-[0.6875rem] leading-none">{trendLabel}</span>
+          ) : null}
+        </div>
+      ) : null}
       <div className="mt-2 text-sm text-muted-foreground">{detail}</div>
-      {action ? <div className="mt-3">{action}</div> : null}
+      {action ? <div className="mt-4">{action}</div> : null}
     </section>
   )
 }
@@ -99,6 +120,7 @@ export function SectionTile({
   tone = 'normal',
   cautionFrom,
   trend,
+  formatScale,
   className,
 }: {
   to: string
@@ -110,13 +132,14 @@ export function SectionTile({
   tone?: InstrumentTone
   cautionFrom?: number
   trend?: Trend
+  formatScale?: (value: number) => string
   className?: string
 }) {
   return (
     <Link
       to={to}
       className={cn(
-        'plate group flex flex-col items-center gap-3 p-4 transition-colors hover:border-bezel-edge focus-visible:border-bezel-edge',
+        'plate fixings group flex min-h-11 flex-col items-center gap-3 p-4 transition-colors hover:border-bezel-edge focus-visible:border-bezel-edge',
         className,
       )}
     >
@@ -128,54 +151,45 @@ export function SectionTile({
         tone={tone}
         cautionFrom={cautionFrom}
         trend={trend}
+        formatScale={formatScale}
+        showScale
         size={124}
       />
       <div className="flex w-full flex-col items-center gap-1.5">
         <Placard className="w-full">{label}</Placard>
         {/* The unit lives here rather than on the dial, where it collided with the scale. */}
         {unit ? (
-          <span className="placard text-center text-[0.5625rem] leading-tight">{unit}</span>
+          <span className="placard text-center text-[0.6875rem] leading-tight">{unit}</span>
         ) : null}
       </div>
     </Link>
   )
 }
 
-const ideaVariants: Record<IdeaCategory, string> = {
-  activity: 'border-radium/40 text-radium',
-  food: 'border-caution/40 text-caution',
-  stay: 'border-[color:var(--chart-3)]/40 text-[color:var(--chart-3)]',
-  travel: 'border-[color:var(--chart-4)]/40 text-[color:var(--chart-4)]',
-}
-
-const expenseVariants: Record<ExpenseCategory, string> = {
-  food: 'border-caution/40 text-caution',
-  transport: 'border-[color:var(--chart-3)]/40 text-[color:var(--chart-3)]',
-  tickets: 'border-[color:var(--chart-4)]/40 text-[color:var(--chart-4)]',
-  stay: 'border-radium/40 text-radium',
-  other: 'border-bezel-edge text-placard',
-}
-
+/**
+ * Category chip. Deliberately achromatic: the category is carried by the word
+ * itself in placard caps, not by a colour. A palette of category hues would put
+ * four more chromatic things on a field whose whole point is that only the
+ * signal colour is chromatic.
+ */
 export function CategoryBadge({
   category,
-  kind,
   className,
 }: {
   category: IdeaCategory | ExpenseCategory
-  kind: 'idea' | 'expense'
+  /** Kept for call-site clarity; both kinds render identically by design. */
+  kind?: 'idea' | 'expense'
   className?: string
 }) {
-  const variant =
-    kind === 'idea'
-      ? ideaVariants[category as IdeaCategory]
-      : expenseVariants[category as ExpenseCategory]
   return (
-    <Badge
-      variant="outline"
-      className={cn('placard bg-transparent text-[0.625rem]', variant, className)}
+    <span
+      className={cn(
+        'placard inline-flex items-center rounded-sm border border-bezel-edge px-2 py-1 text-[0.6875rem] leading-none',
+        className,
+      )}
     >
       {category}
-    </Badge>
+    </span>
   )
 }
 

@@ -71,11 +71,17 @@ export const sourceLabel: Record<CalendarSource, string> = {
   other: 'Booking',
 }
 
-/** Colour by source, from the panel's fixed signal set. */
+/*
+ * Source markers stay inside the panel's own tonal range rather than reaching
+ * for a category palette. Radium marks what the group agreed to, because that
+ * is a live reading; everything else is a booking someone already made, and
+ * those separate by tone. Amber is not used here: it means a figure wanting
+ * attention, and a hotel check-in is not that.
+ */
 export const sourceColor: Record<CalendarSource, string> = {
   idea: 'var(--radium)',
-  flight: 'var(--chart-3)',
-  stay: 'var(--caution)',
-  car: 'var(--chart-4)',
-  other: 'var(--placard)',
+  flight: 'var(--luminous)',
+  stay: 'var(--placard)',
+  car: 'var(--bezel-edge)',
+  other: 'var(--bezel-edge)',
 }

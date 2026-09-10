@@ -29,7 +29,7 @@ import {
 import { Field } from '@/components/common/Field'
 import { MoneyInput } from '@/components/common/money'
 import { PageHeader, Placard, SpecRow } from '@/components/common/chrome'
-import { EmptyState, ListSkeleton } from '@/components/common/state'
+import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import {
   useBookings,
   useCreateBooking,
@@ -366,6 +366,10 @@ export function BookingsPage() {
   )
 
   if (bookings.isPending || members.isPending) return <ListSkeleton rows={4} />
+
+  // A failed load must say so rather than falling through to an empty state.
+  const queries = [bookings, members]
+  if (anyFailed(queries)) return <ScreenError queries={queries} />
 
   const all = bookings.data ?? []
   const memberProfiles = (members.data ?? []).map((m) => m.profile)

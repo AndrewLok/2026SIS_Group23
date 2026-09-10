@@ -4,7 +4,7 @@ import { Loader2, MessagesSquare, SendHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { MemberAvatar } from '@/components/common/people'
-import { EmptyState, ListSkeleton } from '@/components/common/state'
+import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import { useChannels, useMembers, useMessages, useSendMessage } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
 import { api } from '@/services/client'
@@ -89,6 +89,10 @@ export function ChatPage() {
   if (channels.isPending || members.isPending || messages.isPending) {
     return <ListSkeleton rows={5} />
   }
+
+  // A failed load must say so rather than falling through to an empty state.
+  const queries = [channels, members, messages]
+  if (anyFailed(queries)) return <ScreenError queries={queries} />
 
   const all = messages.data ?? []
   const groups = groupMessages(all)

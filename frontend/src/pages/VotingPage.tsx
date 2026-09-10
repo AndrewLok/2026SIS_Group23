@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/drawer'
 import { Field } from '@/components/common/Field'
 import { CategoryBadge, PageHeader, Placard } from '@/components/common/chrome'
-import { EmptyState, ListSkeleton } from '@/components/common/state'
+import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import { MemberAvatar } from '@/components/common/people'
 import {
   useCastVote,
@@ -118,7 +118,7 @@ function IdeaRow({
         {idea.proposedStart ? (
           <span className="tabular">{formatDayTime(idea.proposedStart)}</span>
         ) : (
-          <span className="text-caution">No date yet</span>
+          <span className="text-placard">No date yet</span>
         )}
       </div>
 
@@ -136,7 +136,7 @@ function IdeaRow({
             <Button
               variant="ghost"
               size="icon"
-              className="size-8 text-placard"
+              className="size-11 text-placard"
               onClick={async () => {
                 await remove.mutateAsync(idea.id)
                 toast.success('Idea deleted')
@@ -151,7 +151,7 @@ function IdeaRow({
             size="sm"
             onClick={() => vote(-1)}
             aria-pressed={t.own === -1}
-            className={t.own === -1 ? 'bg-caution text-panel hover:bg-caution/90' : ''}
+            className={`min-h-11 min-w-14 ${t.own === -1 ? 'bg-caution text-panel hover:bg-caution/90' : ''}`}
           >
             <ThumbsDown size={14} aria-hidden="true" />
             {t.disagree}
@@ -159,6 +159,7 @@ function IdeaRow({
           <Button
             variant={t.own === 1 ? 'default' : 'outline'}
             size="sm"
+            className="min-h-11 min-w-14"
             onClick={() => vote(1)}
             aria-pressed={t.own === 1}
           >
@@ -200,8 +201,8 @@ function ProposeIdeaDrawer({ tripId }: { tripId: string }) {
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button>
-          <Plus size={15} aria-hidden="true" />
+        <Button className="min-h-11">
+          <Plus size={16} aria-hidden="true" />
           Propose an idea
         </Button>
       </DrawerTrigger>
@@ -287,6 +288,10 @@ export function VotingPage() {
   if (ideas.isPending || votes.isPending || members.isPending) {
     return <ListSkeleton rows={4} />
   }
+
+  // A failed load must say so rather than falling through to an empty state.
+  const queries = [ideas, votes, members]
+  if (anyFailed(queries)) return <ScreenError queries={queries} />
 
   const all = ideas.data ?? []
   const allVotes = votes.data ?? []

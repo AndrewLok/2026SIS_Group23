@@ -103,25 +103,39 @@ const evaluate = async (expression) => {
   return result.result?.value
 }
 
-async function shoot(name, width, height, url) {
+async function shoot(name, width, height, url, { signedOut = false } = {}) {
   await send('Emulation.setDeviceMetricsOverride', {
     width,
     height,
-    deviceScaleFactor: 2,
+    deviceScaleFactor: 1,
     mobile: width < 768,
   })
-  await send('Page.navigate', { url })
-  await sleep(2600)
 
-  // Sign in as the demo member the first time round.
-  await evaluate(`(async () => {
-    const btn = [...document.querySelectorAll('button')]
-      .find((b) => b.textContent.includes('Try the demo trip'));
-    if (btn) { btn.click(); await new Promise((r) => setTimeout(r, 2600)); }
-    return location.pathname;
-  })()`)
+  /*
+   * The signed-out surfaces have to be captured signed out. Without this the
+   * session survives from an earlier shot and /login redirects straight to the
+   * trip list, so the file is named for a screen it does not show — which makes
+   * that surface silently uninspected.
+   */
+  if (signedOut) {
+    await send('Page.navigate', { url: BASE })
+    await sleep(1200)
+    await evaluate('localStorage.clear(); true')
+    await send('Page.navigate', { url })
+    await sleep(2600)
+  } else {
+    await send('Page.navigate', { url })
+    await sleep(2600)
+    // Sign in as the demo member the first time round.
+    await evaluate(`(async () => {
+      const btn = [...document.querySelectorAll('button')]
+        .find((b) => b.textContent.includes('Try the demo trip'));
+      if (btn) { btn.click(); await new Promise((r) => setTimeout(r, 2600)); }
+      return location.pathname;
+    })()`)
+  }
 
-  if (url !== BASE) {
+  if (!signedOut && url !== BASE) {
     await evaluate(`(async () => {
       history.pushState({}, '', ${JSON.stringify(new URL(url).pathname)});
       window.dispatchEvent(new PopStateEvent('popstate'));
@@ -172,14 +186,17 @@ const shots = [
   ['desktop-money', 1440, 900, `${BASE}/trips/trip-gor/expenses`],
   ['mobile-money', 390, 844, `${BASE}/trips/trip-gor/expenses`],
   ['desktop-voting', 1440, 900, `${BASE}/trips/trip-gor/voting`],
+  ['mobile-voting', 390, 844, `${BASE}/trips/trip-gor/voting`],
   ['mobile-fuel', 390, 844, `${BASE}/trips/trip-gor/fuel`],
   ['desktop-calendar', 1440, 900, `${BASE}/trips/trip-gor/calendar`],
   ['mobile-chat', 390, 844, `${BASE}/trips/trip-gor/chat`],
-  ['mobile-login', 390, 844, `${BASE}/login`],
+  ['mobile-members', 390, 844, `${BASE}/trips/trip-gor/members`],
+  // Signed out, and captured last so it cannot leave a cleared session behind.
+  ['mobile-login', 390, 844, `${BASE}/login`, { signedOut: true }],
 ]
 
-for (const [name, w, h, url] of shots) {
-  await shoot(name, w, h, url)
+for (const [name, w, h, url, opts] of shots) {
+  await shoot(name, w, h, url, opts)
 }
 
 ws.close()

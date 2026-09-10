@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/drawer'
 import { Field } from '@/components/common/Field'
 import { PageHeader, Placard, SpecRow } from '@/components/common/chrome'
-import { EmptyState, ListSkeleton } from '@/components/common/state'
+import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import {
   useCreateFuelLeg,
   useFuelLegs,
@@ -318,6 +318,10 @@ export function FuelPage() {
   )
 
   if (trip.isPending || members.isPending || legs.isPending) return <ListSkeleton rows={3} />
+
+  // A failed load must say so rather than falling through to an empty state.
+  const queries = [trip, members, legs]
+  if (anyFailed(queries)) return <ScreenError queries={queries} />
 
   const allLegs = legs.data ?? []
   const memberProfiles = (members.data ?? []).map((m) => m.profile)

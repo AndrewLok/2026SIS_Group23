@@ -75,6 +75,35 @@ export function ListSkeleton({ rows = 3, className }: { rows?: number; className
   )
 }
 
+/**
+ * The first failed query in a set, for screens that read several at once.
+ *
+ * Without this a screen falls back to `?? []` on a failed load and renders its
+ * empty state, which tells the reader there is nothing there rather than that
+ * the load did not work. On patchy mobile data that is the difference between
+ * "no expenses yet" and "we could not reach the trip".
+ */
+export function ScreenError({
+  queries,
+  className,
+}: {
+  queries: readonly Pick<UseQueryResult<unknown>, 'isError' | 'error' | 'refetch'>[]
+  className?: string
+}) {
+  const failed = queries.find((q) => q.isError)
+  if (!failed) return null
+  const message =
+    failed.error instanceof Error
+      ? failed.error.message
+      : 'This screen could not be loaded.'
+  return <ErrorState message={message} onRetry={() => void failed.refetch()} className={className} />
+}
+
+/** True when any query in the set has failed. */
+export const anyFailed = (
+  queries: readonly Pick<UseQueryResult<unknown>, 'isError'>[],
+): boolean => queries.some((q) => q.isError)
+
 export type QueryBoundaryProps<T> = {
   query: UseQueryResult<T>
   /** Shown while the first load is in flight. */

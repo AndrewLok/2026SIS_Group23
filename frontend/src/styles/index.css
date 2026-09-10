@@ -136,8 +136,14 @@
     --shadow-recessed: 0 2px 6px 0 #00000080 inset;
 
     /* Phosphor. A luminous marking actually glows; this is material, not decoration. */
-    --glow-radium: 0 0 12px -2px #7cff9e66;
-    --glow-caution: 0 0 12px -2px #ffb00066;
+    --glow-radium: 0 0 18px #7cff9e40, 0 0 5px #7cff9e30;
+    --glow-caution: 0 0 18px #ffb00040, 0 0 5px #ffb00030;
+
+    /*
+      Matte panel texture. A hand-authored turbulence patch at very low opacity;
+      the board calls the panel "matte, fine texture", and a flat fill is not it.
+    */
+    --texture-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
 
     /* Placard lettering: letterspaced technical caps. */
     --placard-tracking: 0.12em;
@@ -226,12 +232,53 @@
         }
     }
 
-    /* A plate is bolted to the panel: satin top edge, real shadow beneath. */
+    /*
+      A plate is bolted to the panel. Three materials off the quality-bar board:
+      a matte panel with a fine texture, an anti-reflective face, and a satin
+      bezel that catches light along its top edge. A flat fill with a hairline
+      border is the cheap version of all three.
+    */
     .plate {
-        background: var(--face);
+        background:
+            var(--texture-fine),
+            linear-gradient(
+                176deg,
+                color-mix(in oklab, var(--bezel-edge) 20%, var(--face)) 0%,
+                var(--face) 42%,
+                color-mix(in oklab, var(--panel) 45%, var(--face)) 100%
+            );
         border: 1px solid var(--bezel);
         border-radius: var(--radius);
         box-shadow: var(--shadow-panel);
+    }
+
+    /*
+      Corner fixings. Every instrument on the board is screwed to the panel, and
+      the heads are what tell you it is a panel rather than a card.
+    */
+    .fixings {
+        position: relative;
+    }
+
+    .fixings::before,
+    .fixings::after {
+        content: '';
+        position: absolute;
+        inset: 7px 7px auto auto;
+        width: 5px;
+        height: 5px;
+        border-radius: 999px;
+        background: radial-gradient(
+            circle at 32% 30%,
+            var(--bezel-edge) 0%,
+            var(--bezel) 58%,
+            color-mix(in oklab, black 45%, var(--bezel)) 100%
+        );
+        box-shadow: 0 1px 0 0 color-mix(in oklab, white 8%, transparent);
+    }
+
+    .fixings::after {
+        inset: auto auto 7px 7px;
     }
 
     /* A recessed face sits below the panel surface. */
@@ -239,6 +286,18 @@
         background: var(--panel);
         border: 1px solid var(--bezel-edge);
         box-shadow: var(--shadow-recessed);
+    }
+
+    /*
+      Phosphor. A luminous marking actually glows on a night panel; this is the
+      material the world names, applied only to live readings and never as trim.
+    */
+    .glow-radium {
+        text-shadow: var(--glow-radium);
+    }
+
+    .glow-caution {
+        text-shadow: var(--glow-caution);
     }
 
     /*

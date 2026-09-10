@@ -18,12 +18,21 @@ export type InstrumentTone = 'normal' | 'caution' | 'warning'
 export type Trend = 'up' | 'down' | 'steady'
 
 /** Trend marker. Drawn from the icon set, never a Unicode arrow. */
-function TrendMark({ trend, stroke }: { trend: Trend; stroke: string }) {
+export function TrendMark({
+  trend,
+  stroke,
+  inline = false,
+}: {
+  trend: Trend
+  stroke: string
+  /** Inline sits in a row of text; otherwise it pins to the gauge face. */
+  inline?: boolean
+}) {
   const Icon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
   const label = trend === 'up' ? 'rising' : trend === 'down' ? 'falling' : 'steady'
   return (
     <span
-      className="absolute right-[10%] top-[22%]"
+      className={inline ? 'inline-flex' : 'absolute right-[10%] top-[22%]'}
       style={{ color: trend === 'steady' ? 'var(--placard)' : stroke }}
     >
       <Icon size={13} strokeWidth={2.25} aria-hidden="true" />
@@ -83,6 +92,8 @@ export type InstrumentProps = {
   trend?: Trend
   /** Numerals around the dial. Off by default; a tile is too small for them. */
   showScale?: boolean
+  /** How a scale position reads. Required for any dial holding cents. */
+  formatScale?: (value: number) => string
   size?: number
   className?: string
 }
@@ -97,6 +108,7 @@ export function Instrument({
   unit,
   trend,
   showScale = false,
+  formatScale = (v) => String(Math.round(v)),
   size = 132,
   className,
 }: InstrumentProps) {
@@ -117,12 +129,20 @@ export function Instrument({
     return { angle, major, outer, inner, key: i }
   })
 
+  /*
+   * Only the midpoint and the top of the range are labelled. At tile size more
+   * than two numerals crowds the face, and zero sits exactly where the reading
+   * goes: a gauge does not need its zero written on it, because the start of
+   * the arc already says where the scale begins.
+   *
+   * The formatter matters. A dial measuring money holds cents, and printing the
+   * raw number puts "59934" on a face that means $599.34.
+   */
   const scaleNumbers = showScale
-    ? Array.from({ length: 5 }, (_, i) => {
-        const ratio = i / 4
+    ? [0.5, 1].map((ratio, i) => {
         const angle = SWEEP_START + ratio * SWEEP_DEGREES
-        const at = polar(cx, cy, trackRadius - 28, angle)
-        return { key: i, at, label: Math.round(min + ratio * (max - min)) }
+        const at = polar(cx, cy, trackRadius - 27, angle)
+        return { key: i, at, label: formatScale(min + ratio * (max - min)) }
       })
     : []
 
@@ -198,7 +218,7 @@ export function Instrument({
             textAnchor="middle"
             dominantBaseline="central"
             fill="var(--placard)"
-            fontSize={13}
+            fontSize={12}
             fontFamily="var(--font-sans)"
             fontStretch="82%"
           >

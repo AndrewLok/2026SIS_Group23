@@ -25,7 +25,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { PageHeader, Placard, SpecRow } from '@/components/common/chrome'
-import { EmptyState, ListSkeleton } from '@/components/common/state'
+import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import { useBookings, useIdeas } from '@/hooks/queries'
 import { sourceColor, sourceLabel, toCalendarItems } from '@/lib/calendar'
 import type { CalendarItem } from '@/lib/calendar'
@@ -226,6 +226,10 @@ export function CalendarPage() {
   const [open, setOpen] = React.useState<CalendarItem | null>(null)
 
   if (ideas.isPending || bookings.isPending) return <ListSkeleton rows={4} />
+
+  // A failed load must say so rather than falling through to an empty state.
+  const queries = [ideas, bookings]
+  if (anyFailed(queries)) return <ScreenError queries={queries} />
 
   const items = toCalendarItems(ideas.data ?? [], bookings.data ?? [])
 
