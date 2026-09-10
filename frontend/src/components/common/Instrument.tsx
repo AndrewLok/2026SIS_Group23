@@ -118,6 +118,9 @@ export function Instrument({
   const valueAngle = angleFor(value, min, max)
   const filled = (valueAngle - SWEEP_START) / SWEEP_DEGREES
   const stroke = toneVar[tone]
+  // Phosphor belongs to every live reading, not just the strips.
+  const glowClass =
+    tone === 'caution' ? 'glow-caution' : tone === 'warning' ? '' : 'glow-radium'
 
   // Ticks: a major every fifth, minors between, across the full sweep.
   const tickCount = 41
@@ -130,20 +133,28 @@ export function Instrument({
   })
 
   /*
-   * Only the midpoint and the top of the range are labelled. At tile size more
-   * than two numerals crowds the face, and zero sits exactly where the reading
-   * goes: a gauge does not need its zero written on it, because the start of
-   * the arc already says where the scale begins.
+   * One numeral: the top of the range, set where the sweep ends.
+   *
+   * This face is drawn in a 200-unit viewBox but rendered at 124px, so anything
+   * sized in viewBox units lands on screen at 0.62 of its nominal size. Two
+   * labels at 12 units rendered at about 7px and the midpoint ran into the tick
+   * ring, which is a scale the dial cannot actually show. Sizing from `size`
+   * rather than the viewBox keeps it legible wherever the gauge is used, and a
+   * single label at full scale has nothing to collide with. The rest of the
+   * range reads in the caption beneath the instrument.
    *
    * The formatter matters. A dial measuring money holds cents, and printing the
    * raw number puts "59934" on a face that means $599.34.
    */
+  const scaleFontSize = (13 / size) * 200
   const scaleNumbers = showScale
-    ? [0.5, 1].map((ratio, i) => {
-        const angle = SWEEP_START + ratio * SWEEP_DEGREES
-        const at = polar(cx, cy, trackRadius - 27, angle)
-        return { key: i, at, label: formatScale(min + ratio * (max - min)) }
-      })
+    ? [
+        {
+          key: 0,
+          at: polar(cx, cy, trackRadius - 24, SWEEP_START + SWEEP_DEGREES),
+          label: formatScale(max),
+        },
+      ]
     : []
 
   return (
@@ -218,7 +229,7 @@ export function Instrument({
             textAnchor="middle"
             dominantBaseline="central"
             fill="var(--placard)"
-            fontSize={12}
+            fontSize={scaleFontSize}
             fontFamily="var(--font-sans)"
             fontStretch="82%"
           >
@@ -253,7 +264,7 @@ export function Instrument({
       */}
       <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-[20%]">
         <span
-          className="instrument-value px-[14%] text-center leading-none"
+          className={cn('instrument-value px-[14%] text-center leading-none', glowClass)}
           style={{ color: stroke, fontSize: size * valueScale(display) }}
         >
           {display}

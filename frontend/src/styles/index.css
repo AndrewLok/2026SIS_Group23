@@ -116,9 +116,11 @@
 
     --chart-1: var(--radium);
     --chart-2: var(--caution);
-    --chart-3: #5ad2e0;
-    --chart-4: #c08cf5;
-    --chart-5: var(--placard);
+    /* Kept because shadcn expects them, but held inside the panel's range: a
+       teal or violet here is a door back to a category palette. */
+    --chart-3: var(--luminous);
+    --chart-4: var(--placard);
+    --chart-5: var(--bezel-edge);
 
     --sidebar: var(--face);
     --sidebar-foreground: var(--luminous);
@@ -140,10 +142,11 @@
     --glow-caution: 0 0 18px #ffb00040, 0 0 5px #ffb00030;
 
     /*
-      Matte panel texture. A hand-authored turbulence patch at very low opacity;
-      the board calls the panel "matte, fine texture", and a flat fill is not it.
+      Matte panel texture. The board calls the panel "matte, fine texture", and a
+      flat fill is not it. Opacity is set where the grain actually reads on a
+      plate at 1x: any lower and it is a token nobody can see.
     */
-    --texture-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    --texture-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E");
 
     /* Placard lettering: letterspaced technical caps. */
     --placard-tracking: 0.12em;

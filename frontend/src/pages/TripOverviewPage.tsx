@@ -20,6 +20,7 @@ import {
   useMembers,
   useMessages,
   useTrip,
+  useVotes,
 } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
 import { api } from '@/services/client'
@@ -60,6 +61,7 @@ export function TripOverviewPage() {
   const fuelLegs = useFuelLegs(tripId)
   const expenses = useExpenses(tripId)
   const channels = useChannels(tripId)
+  const votes = useVotes(tripId)
   const messages = useMessages(channels.data?.[0]?.id)
 
   const pending =
@@ -73,7 +75,7 @@ export function TripOverviewPage() {
   if (pending) return <PanelSkeleton />
 
   // A failed load must say so rather than falling through to an empty state.
-  const queries = [trip, members, ideas, bookings, fuelLegs, expenses, channels]
+  const queries = [trip, members, ideas, bookings, fuelLegs, expenses, channels, votes]
   if (anyFailed(queries)) return <ScreenError queries={queries} />
 
   if (!trip.data || !members.data) {
@@ -88,6 +90,17 @@ export function TripOverviewPage() {
   const allExpenses = expenses.data ?? []
 
   const openIdeas = allIdeas.filter((i) => i.status === 'voting')
+
+  /*
+   * Amber means a figure wanting attention, so the voting gauge turns amber only
+   * when an open idea is waiting on YOUR vote. Going amber merely because ideas
+   * are open makes amber the resting state, and a signal that is always on is
+   * not a signal.
+   */
+  const allVotes = votes.data ?? []
+  const awaitingMyVote = openIdeas.filter(
+    (i) => !allVotes.some((v) => v.ideaId === i.id && v.userId === userId),
+  ).length
   const items = toCalendarItems(allIdeas, allBookings)
   const next = nextUp(items)
 
@@ -261,8 +274,12 @@ export function TripOverviewPage() {
           display={String(openIdeas.length)}
           value={openIdeas.length}
           max={Math.max(1, allIdeas.length)}
-          unit={`open of ${allIdeas.length} proposed`}
-          tone={openIdeas.length > 0 ? 'caution' : 'normal'}
+          unit={
+            awaitingMyVote > 0
+              ? `${awaitingMyVote} waiting on you`
+              : `open of ${allIdeas.length} proposed`
+          }
+          tone={awaitingMyVote > 0 ? 'caution' : 'normal'}
         />
         <SectionTile
           to={`/trips/${tripId}/calendar`}

@@ -58,7 +58,7 @@ function TopBar({ tripId }: { tripId: string }) {
       <div className="mx-auto flex w-full max-w-4xl items-center gap-3 px-4 py-3 md:px-6">
         <Link
           to="/trips"
-          className="placard shrink-0 text-[0.6875rem] hover:text-foreground"
+          className="placard shrink-0 text-xs hover:text-foreground"
           aria-label="All trips"
         >
           Voyager
@@ -123,7 +123,7 @@ function BottomNav({ tripId }: { tripId: string }) {
               {({ isActive }) => (
                 <>
                   <item.icon size={19} strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
-                  <span className="placard text-[0.5625rem] leading-none">{item.label}</span>
+                  <span className="placard text-[0.6875rem] leading-none">{item.label}</span>
                 </>
               )}
             </NavLink>

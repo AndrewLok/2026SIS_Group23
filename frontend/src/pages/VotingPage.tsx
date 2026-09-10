@@ -63,7 +63,7 @@ function VoterList({
   if (ids.length === 0) return null
   return (
     <div className="flex items-center gap-2">
-      <span className="placard text-[0.5625rem]">{label}</span>
+      <span className="placard text-[0.6875rem]">{label}</span>
       <span className="flex items-center gap-1">
         {ids.map((id) => {
           const profile = profiles.get(id)

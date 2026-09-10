@@ -99,7 +99,7 @@ export function ReadingStrip({
         <div className="mt-1.5 flex items-center justify-end gap-1.5">
           <TrendMark trend={trend} stroke={color} inline />
           {trendLabel ? (
-            <span className="placard text-[0.6875rem] leading-none">{trendLabel}</span>
+            <span className="placard text-xs leading-none">{trendLabel}</span>
           ) : null}
         </div>
       ) : null}
@@ -159,7 +159,7 @@ export function SectionTile({
         <Placard className="w-full">{label}</Placard>
         {/* The unit lives here rather than on the dial, where it collided with the scale. */}
         {unit ? (
-          <span className="placard text-center text-[0.6875rem] leading-tight">{unit}</span>
+          <span className="placard text-center text-xs leading-tight">{unit}</span>
         ) : null}
       </div>
     </Link>
@@ -184,7 +184,7 @@ export function CategoryBadge({
   return (
     <span
       className={cn(
-        'placard inline-flex items-center rounded-sm border border-bezel-edge px-2 py-1 text-[0.6875rem] leading-none',
+        'placard inline-flex items-center rounded-sm border border-bezel-edge px-2 py-1 text-xs leading-none',
         className,
       )}
     >
@@ -212,7 +212,7 @@ export function SpecRow({
         className,
       )}
     >
-      <span className="placard flex items-center gap-2 text-[0.6875rem]">
+      <span className="placard flex items-center gap-2 text-xs">
         {Icon ? <Icon size={13} strokeWidth={1.75} aria-hidden="true" /> : null}
         {label}
       </span>

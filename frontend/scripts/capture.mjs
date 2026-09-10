@@ -180,6 +180,16 @@ async function shoot(name, width, height, url, { signedOut = false } = {}) {
 
 await mkdir(OUT, { recursive: true })
 
+/*
+ * Start every run from a fresh seed. The browser profile persists between runs,
+ * so without this a previous run's visit to the chat screen has already marked
+ * it read and the unread gauge captures as zero — the screens quietly drift
+ * from the demo state, and no two runs are comparable.
+ */
+await send('Page.navigate', { url: BASE })
+await sleep(1500)
+await evaluate('localStorage.clear(); true')
+
 const shots = [
   ['desktop', 1440, 900, `${BASE}/trips/trip-gor`],
   ['mobile', 390, 844, `${BASE}/trips/trip-gor`],

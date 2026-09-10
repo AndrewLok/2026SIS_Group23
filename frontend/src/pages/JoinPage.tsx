@@ -43,7 +43,7 @@ export function JoinPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
-        <p className="placard mb-3 text-center text-[0.625rem]">Invite code {code.toUpperCase()}</p>
+        <p className="placard mb-3 text-center text-xs">Invite code {code.toUpperCase()}</p>
 
         {preview.isPending ? (
           <div className="plate flex items-center justify-center gap-3 p-8 text-placard">

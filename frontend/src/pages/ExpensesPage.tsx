@@ -482,11 +482,11 @@ export function ExpensesPage() {
           [...byDay.entries()].map(([key, dayExpenses]) => (
             <section key={key} className="flex flex-col gap-2">
               <div className="flex items-baseline gap-3">
-                <h3 className="placard text-[0.625rem]">
+                <h3 className="placard text-xs">
                   {formatDay(dayExpenses[0]?.spentAt ?? key)}
                 </h3>
                 <span className="h-px flex-1 bg-bezel" aria-hidden="true" />
-                <span className="tabular text-[0.625rem] text-placard">
+                <span className="tabular text-xs text-placard">
                   {formatMoney(dayExpenses.reduce((s, e) => s + e.amountCents, 0))}
                 </span>
               </div>

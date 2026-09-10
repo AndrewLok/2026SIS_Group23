@@ -150,7 +150,7 @@ export function MembersPage() {
                       </p>
                     </div>
                     {member.role === 'owner' ? (
-                      <Badge variant="outline" className="placard border-radium/40 text-[0.625rem] text-radium">
+                      <Badge variant="outline" className="placard border-radium/40 text-xs text-radium">
                         owner
                       </Badge>
                     ) : null}

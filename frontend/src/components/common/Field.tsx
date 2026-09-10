@@ -32,9 +32,9 @@ export function Field({
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <Label htmlFor={id} className="placard text-[0.6875rem]">
+      <Label htmlFor={id} className="placard text-xs">
         {label}
-        {required ? <span className="text-caution"> *</span> : null}
+        {required ? <span className="text-placard"> *</span> : null}
       </Label>
       {children({ id, describedBy, invalid: Boolean(error) })}
       {hint ? (

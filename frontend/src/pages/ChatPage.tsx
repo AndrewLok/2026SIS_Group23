@@ -23,7 +23,7 @@ function ChannelList({ names }: { names: string[] }) {
     <ul className="flex gap-2 overflow-x-auto pb-2">
       {names.map((name) => (
         <li key={name}>
-          <span className="placard rounded-sm border border-bezel px-2 py-1 text-[0.625rem]">
+          <span className="placard rounded-sm border border-bezel px-2 py-1 text-xs">
             {name}
           </span>
         </li>
@@ -129,7 +129,7 @@ export function ChatPage() {
                 {showDay ? (
                   <li className="flex items-center gap-3">
                     <span className="h-px flex-1 bg-bezel" aria-hidden="true" />
-                    <span className="placard text-[0.5625rem]">
+                    <span className="placard text-[0.6875rem]">
                       {formatDay(group.messages[0]?.createdAt ?? '')}
                     </span>
                     <span className="h-px flex-1 bg-bezel" aria-hidden="true" />
@@ -139,7 +139,7 @@ export function ChatPage() {
                 {carriesDivider ? (
                   <li className="flex items-center gap-3">
                     <span className="h-px flex-1 bg-caution/50" aria-hidden="true" />
-                    <span className="placard text-[0.5625rem] text-caution">New</span>
+                    <span className="placard text-[0.6875rem] text-caution">New</span>
                     <span className="h-px flex-1 bg-caution/50" aria-hidden="true" />
                   </li>
                 ) : null}
@@ -147,7 +147,7 @@ export function ChatPage() {
                 <li className={`flex gap-3 ${mine ? 'flex-row-reverse' : ''}`}>
                   {profile ? <MemberAvatar profile={profile} size={30} /> : null}
                   <div className={`flex min-w-0 flex-col gap-1 ${mine ? 'items-end' : ''}`}>
-                    <span className="placard text-[0.5625rem]">
+                    <span className="placard text-[0.6875rem]">
                       {mine ? 'You' : (profile?.displayName ?? 'Someone')} ·{' '}
                       {formatTime(group.messages[0]?.createdAt ?? '')}
                     </span>
