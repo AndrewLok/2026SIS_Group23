@@ -12,6 +12,23 @@ colors:
   radium: "#7cff9e"
   caution: "#ffb000"
   warning: "#ff3b30"
+  # Overview cluster only (see The Driver's Seat Exception). These paint the
+  # windscreen and the cluster on the Panel tab and nowhere else.
+  needle: "#ff6b2c"
+  chrome-hi: "#9aa2aa"
+  chrome-mid: "#3a3f45"
+  chrome-lo: "#121417"
+  cowl: "#090a0c"
+  sky-top: "#03050a"
+  sky-horizon: "#0d1524"
+  hill-far: "#090e17"
+  hill-near: "#05070b"
+  asphalt: "#0a0c0f"
+  verge-far: "#050a07"
+  verge-near: "#0a150e"
+  foliage: "#0b1a10"
+  foliage-far: "#0a1610"
+  road-sign: "oklch(0.4 0.085 160)"
 typography:
   display:
     fontFamily: "Saira Variable, ui-sans-serif, system-ui, sans-serif"
@@ -141,16 +158,33 @@ components:
     typography: "{typography.label}"
     rounded: "{rounded.sm}"
     padding: "0.25rem 0.5rem"
-  reading-strip:
-    backgroundColor: "{colors.face}"
+  # Overview cluster components. Scoped to the Panel tab.
+  cowl:
+    backgroundColor: "{colors.cowl}"
+    rounded: "1.75rem"
+    padding: "1.25rem 0.75rem 0.5rem"
+  dial:
     textColor: "{colors.radium}"
-    rounded: "{rounded.md}"
-    padding: "1rem 1.25rem"
-  section-tile:
-    backgroundColor: "{colors.face}"
+    rounded: "{rounded.full}"
+    width: "16rem"
+  warning-lamp:
+    textColor: "{colors.placard}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 0.5rem"
+    height: "2.25rem"
+  warning-lamp-lit:
+    textColor: "{colors.caution}"
+  trip-meter:
+    textColor: "{colors.radium}"
+    typography: "{typography.display}"
+    rounded: "3px"
+  road-sign:
+    backgroundColor: "{colors.road-sign}"
     textColor: "{colors.luminous}"
+    typography: "{typography.body}"
     rounded: "{rounded.md}"
-    padding: "1rem"
+    padding: "0.5rem 0.625rem"
   nav-item:
     textColor: "{colors.placard}"
     typography: "{typography.label}"
@@ -166,16 +200,18 @@ components:
 
 **Creative North Star: "The Night Instrument Panel"**
 
-Voyager is read in a car at night, by someone who has ten seconds and one thumb. So the app is not a dashboard that borrows gauge imagery; it is an instrument panel with working instruments. Every reading is a real gauge with a tick scale, a caution band, a filled arc and a needle that damps rather than snaps. Every container is a plate bolted to the panel, with visible corner fixings, a satin bezel that catches light along its top edge, and a fine matte texture over the fill. The materials come first, and the layout is what fits between them.
+Voyager is read in a car at night, by someone who has ten seconds and one thumb. So the app is not a dashboard that borrows gauge imagery; it is an instrument panel with working instruments. Where a level is genuinely being read it is a real dial with a tick scale, a caution band and a needle that damps rather than snaps; anything that is an alert rather than a level is a warning lamp that stays dark until it is needed. Every container is a plate bolted to the panel, with visible corner fixings, a satin bezel that catches light along its top edge, and a fine matte texture over the fill. The materials come first, and the layout is what fits between them.
 
 The field is achromatic on purpose, and that is the load-bearing decision of the whole system. Panel, face, bezel and placard are all tinted off one hue and none of them is a pure grey or a pure black. Against that field there are exactly three chromatic signals with fixed meanings: radium green is a live reading, caution amber is a figure that wants your attention, warning red is destructive only and never decorates. Because nothing else on screen carries chroma, a single amber needle is impossible to miss. The moment a fourth colour appears — a category palette, a chart hue, a brand accent — the signal system stops working.
 
 The app is dark only, by explicit decision. There is no light theme and no `.dark` class to toggle: `:root` carries `color-scheme: dark` and the palette directly. A light mode would not be a variant of this world, it would be a different world. Density is high and rhythm is tight (a 0.75rem–1rem gap dominates), corners are machined rather than soft (0.25rem base radius), and the app spends its one authored motion moment on the power-on self-test sweep when the panel comes alive.
 
+One screen goes further. The overview (the Panel tab) is the driver's view of a classic analogue car at night: a windscreen with the road moving toward the glass, a cowl holding two chrome-ringed, green-backlit dials with orange needles, mechanical odometer drums, and a strip of warning lamps. It is a scoped exception with its own materials (see The Driver's Seat Exception); the backlight stays radium and the Three Signals keep their meanings, so it still reads as the same app. Every other screen stays on plates.
+
 **Key Characteristics:**
 - Dark only; no light theme, no theme toggle.
 - Achromatic field, three fixed-meaning signal colours.
-- Real gauges with scales, bands, needles and damped travel.
+- A dial only where a level is read; alerts are lamps that stay dark until something waits on you.
 - Plates with fixings, texture and a lit bezel edge — never flat cards.
 - Uppercase letterspaced placards that sit *under* what they name.
 - Measurements set in tabular mono; readings in condensed instrument numerals.
@@ -202,6 +238,15 @@ One achromatic field tinted off a single cool hue, plus three signal colours tha
 - **Luminous** (`{colors.luminous}`): All primary text, and the major tick marks on a dial. Slightly cool white, never `#ffffff`.
 - **Placard Grey** (`{colors.placard}`): Every uppercase label plate, minor tick marks, dial scale numerals, muted body copy, and a steady (neither up nor down) trend mark.
 
+### Overview Cluster (scoped to the Panel tab)
+- **Needle Orange** (`{colors.needle}`): The dial needles, and their soft drop-shadow bleed. A pointer, not a signal: the reading under it carries the tone.
+- **Chrome High / Mid / Low** (`{colors.chrome-hi}`, `{colors.chrome-mid}`, `{colors.chrome-lo}`): The needle hub gradient, the rear-view mirror rim and stalk, and the ring around the trip-meter drums. The dial's brushed ring is a conic sweep through the same greys.
+- **Cowl** (`{colors.cowl}`): The grained dark plastic the cluster sits under; also the base an unlit lamp's symbol is mixed toward.
+- **Sky Top / Sky Horizon** (`{colors.sky-top}`, `{colors.sky-horizon}`): The near-black blue night sky, top to horizon. The only blue on any screen.
+- **Hill Far / Hill Near / Asphalt** (`{colors.hill-far}`, `{colors.hill-near}`, `{colors.asphalt}`): The horizon range, the near shoulders, and the road surface.
+- **Verge / Foliage** (`{colors.verge-far}`, `{colors.verge-near}`, `{colors.foliage}`, `{colors.foliage-far}`): Night bush. The grass verge darkens toward the horizon; gum trees, bushes and the far treeline are silhouettes a shade off the verge, so they sit back. They read where the low beams catch them, near the car, and nowhere else.
+- **Road Sign Green** (`{colors.road-sign}`): The Australian guide sign carrying the next stop, white-bordered and lettered in luminous.
+
 ### Named Rules
 
 **The Three Signals Rule.** Radium is a live reading, amber is a figure wanting attention, red is destructive. Those meanings are fixed app-wide and are never restyled per trip, per category, or per screen. A fourth chromatic meaning is not added; it is argued about first.
@@ -212,6 +257,8 @@ One achromatic field tinted off a single cool hue, plus three signal colours tha
 
 **The Identity Hue Exception.** Member avatars are the one place a per-user hue is allowed, and it is bounded: initials on `oklch(0.32 0.07 H)` with `oklch(0.93 0.06 H)` text and an `oklch(0.46 0.09 H)` border, so only the hue varies and lightness and chroma stay fixed for contrast. Chroma stays at or below 0.09 — recognisably a person, never a second signal system.
 
+**The Driver's Seat Exception.** The overview cluster is the one place the windscreen and cluster materials are allowed: needle orange, the three chromes, cowl, sky, hills, verge, foliage, asphalt and road-sign green, plus the warm low-beam light screened over the road. They are confined to the Panel tab and are never used on another screen, as text, or as a fill on a control. None of them carries meaning. The cluster's backlight is radium, a dial reading takes radium, amber or placard by the Three Signals, and a lit lamp is amber because something waits on you; orange is only ever the needle.
+
 ## Typography
 
 **Display Font:** Saira Variable (with `ui-sans-serif, system-ui, sans-serif`)
@@ -221,7 +268,7 @@ One achromatic field tinted off a single cool hue, plus three signal colours tha
 **Character:** Saira's variable width does the work a second family would normally do: condensed at 82% for instrument readings, slightly condensed at 92% for placard caps, normal for prose. JetBrains Mono handles anything that is a measurement, so digits sit in fixed columns and a changing number never shifts the layout around it.
 
 ### Hierarchy
-- **Display** (`instrument-value`, 82% width, tabular, 1.5rem–2.25rem, line-height 1): Gauge readings, reading-strip values, the wordmark, and the invite code. On a dial the size is computed from the gauge's rendered size and the reading's own length (0.24 → 0.125 of size as the string grows), so `$1,234.56` fits the same face as `5`.
+- **Display** (`instrument-value`, 82% width, tabular, 1.5rem–2.25rem, line-height 1): Dial readings, the trip-meter drums, money summary figures, the wordmark, and the invite code. On a dial the reading steps down with its own length (30, 25, then 21 of the 200-unit face at up to 4, up to 7, and more characters), so `$1,234.56` fits the same face as `5`.
 - **Headline** (600, 1.5rem, 1.875rem at `md`, tight tracking): The page `h1` in `PageHeader`, truncated to one line.
 - **Title** (600, 1.25rem): Secondary screen headings such as the join preview.
 - **Body** (400, 0.875rem, 1.5): Nearly all prose. Supporting lines under a reading use placard grey; explanatory copy is capped around 36–40ch inside empty and error states.
@@ -242,11 +289,13 @@ One centred column, `max-w-4xl` (56rem), with `px-4` on mobile and `px-6` from `
 
 The rhythm is a tight subset of the scale: `gap-3` (0.75rem) is the default between siblings, `gap-4` between grid cells, `gap-6` between major stacks, and `gap-2` inside a row. Plates take `px-5 py-4`; tiles take `p-4`; empty and error states take `px-6 py-10`.
 
-The overview panel is the reference composition: full-width reading strips first (one column, two from `md`), then the gauge grid at `grid-cols-2` rising to `sm:grid-cols-3`, then a summary strip. Forms use `grid-cols-2` for paired fields. Interactive targets hold a minimum of 2.75rem, and the bottom-nav item is 3.5rem tall.
+The overview is composed as a car cluster, not a grid. The dashboard runs full-bleed on mobile (it cancels the column's `px-4`) and returns to the column from `md`. The windscreen is 13.5rem tall (19rem from `md`); the cowl overlaps its bottom edge by 1.5rem (2.5rem from `md`). Inside the cowl the Balance and Budget dials sit side by side, each capped at 16rem wide, with the trip meter full-width beneath them on mobile and centred between them from `md` (`1fr auto 1fr`). The four warning lamps span the cowl's base in four equal columns behind a faint hairline. The one primary action, Settle up, sits directly under the cowl at 3rem tall, full-width on mobile and 18rem centred from `md`, followed by a capped line of estimate copy. Forms use `grid-cols-2` for paired fields. Interactive targets hold a minimum of 2.75rem, and the bottom-nav item is 3.5rem tall.
 
 ## Elevation & Depth
 
 Depth here is material, not drop shadow. A plate is lit from above: a 1px inset highlight along its top edge in bezel-edge, a 176° gradient from a bezel-tinted top through face to a panel-tinted bottom, a fine turbulence texture over the fill, a bezel hairline border, and a soft contact shadow beneath. Recessed surfaces invert it — panel-black fill, bezel-edge border, and an inset shadow so the face sits *below* the panel surface. Gauge faces, empty-state icon wells and error-state icon wells are all recessed.
+
+The overview cluster builds its own depth on the same logic. The windscreen glass is sealed with a dark inner vignette and one faint raked sheen. The cowl is grained dark plastic lit along its lip, throwing a shadow up onto the glass. Each dial sits in a recessed binnacle whose upper edge shades the top of the face, inside a brushed chrome ring with a bright lip, a dark gap and a sunk face under glass that catches one crescent of light clear of the reading. Lamp lenses are recessed dark wells until they are backlit.
 
 Phosphor is the third depth device and it is material, not decoration: a luminous marking on a night panel actually glows, so radium and amber readings carry a two-stop text glow. Red never glows.
 
@@ -260,15 +309,15 @@ Phosphor is the third depth device and it is material, not decoration: a luminou
 
 **The Bolted Plate Rule.** A container is a plate: texture, gradient, bezel border, panel shadow, and two corner fixing heads (5px, diagonally opposed, top-right and bottom-left). A flat fill with a hairline border is the cheap version of all three materials. Plates do not nest inside plates.
 
-**The Phosphor Rule.** Glow marks a live reading and nothing else. It is never applied as trim, to a heading, to a border, or to a destructive colour.
+**The Phosphor Rule.** Glow marks a live reading and nothing else. It is never applied as trim, to a heading, to a border, or to a destructive colour. On the overview the same material is backlight: dial markings bleed a little light into the face, the trip-meter digits glow radium, a lit lamp glows amber, and the needle carries a soft bleed of its own colour.
 
-**The Power-On Rule.** The one authored motion moment is the self-test sweep: needles and arcs leave the 135° peg together over 900ms on `cubic-bezier(0.16, 1, 0.3, 1)`, using a `from`-only keyframe so each gauge lands on its own value. Value changes afterwards are damped over 620ms on the same curve — a real gauge settles, it does not snap. Both are fully disabled under `prefers-reduced-motion: reduce`, alongside a global reduction of all animation and scroll behaviour.
+**The Power-On Rule.** The one authored motion moment is the self-test sweep, on `cubic-bezier(0.16, 1, 0.3, 1)` with a `from`-only keyframe so each instrument lands on its own value. On the overview the dial needles leave their scale start over 1100ms after a 120ms beat, and the odometer drums roll up from zero over 1400ms, staggered 90ms per drum. Value changes afterwards are damped on the same curve (620ms for a needle, 900ms for a drum) — a real gauge settles, it does not snap. The road is the only loop: transform-only perspective motion, 8s linear (set once, in the windscreen), paused whenever the windscreen is off-screen. All of it is disabled under `prefers-reduced-motion: reduce`, alongside a global reduction of all animation and scroll behaviour, and the road then rests on a frozen frame.
 
 ## Shapes
 
-Machined, not soft. The base radius is 0.25rem (`{rounded.md}`) and it is the radius of a plate, a tile, and a skeleton. The scale steps by halves and doubles off that base rather than by a separate ramp. Placards and chips take 0.125rem; shadcn controls (buttons, inputs) take 0.375rem; only genuinely circular things — gauge faces, avatars, icon wells, scrollbar thumbs, fixing heads — take a full round.
+Machined, not soft. The base radius is 0.25rem (`{rounded.md}`) and it is the radius of a plate, a tile, and a skeleton. The scale steps by halves and doubles off that base rather than by a separate ramp. Placards and chips take 0.125rem; shadcn controls (buttons, inputs) take 0.375rem; only genuinely circular things — dial faces, avatars, icon wells, scrollbar thumbs, fixing heads — take a full round. The overview cluster is the one place larger curves appear, because a windscreen and a cowl are moulded: their top corners take 2rem and 1.75rem (3rem from `md`), the mirror 1rem, and lamp lenses 0.375rem.
 
-Borders are always 1px and always a panel material: bezel for a plate or a divider, bezel-edge for an input, a recess or a hover state. Rules between rows are the same hairline with the last one dropped. The recurring silhouette of the whole app is the circle-inside-a-rectangle: a round recessed dial on a square bolted plate, with a label plate beneath.
+Borders are always 1px and always a panel material: bezel for a plate or a divider, bezel-edge for an input, a recess or a hover state. Rules between rows are the same hairline with the last one dropped. The recurring silhouette of the whole app is the circle-inside-a-rectangle: a round recessed well on a square bolted plate, with a label plate beneath. On the overview it becomes two chrome rings seated in a cowl, each with its placard beneath.
 
 ## Components
 
@@ -301,12 +350,19 @@ Borders are always 1px and always a panel material: bezel for a plate or a divid
 - **Top bar:** Sticky, panel at 95% with backdrop blur under a bezel hairline. The wordmark is a placard, a bezel-edge slash separates it from the trip name, and an overflow menu holds the secondary destinations.
 - **Bottom nav:** Five equal items, 3.5rem tall, icon over a 0.6875rem placard label. Inactive is placard grey at 1.75 stroke; active is radium at 2.25 stroke. Colour and stroke weight both carry the state — no pill, no underline, no indicator bar.
 
-### Instrument (signature)
-The gauge is the system. A 200-unit viewBox rendered at 124–132px: a bezel ring around a recessed panel-black face, a 270° sweep starting at 135°, 41 ticks with a major every fifth (luminous, 2.5px) and minors between (placard, 1.25px), a bezel-edge unfilled track, an optional amber caution band drawn *under* the value arc, the value arc revealed by `stroke-dashoffset` on `pathLength=1`, and a needle over a bezel-edge hub with a tone-coloured centre. The reading sits over the lower half of the face where a real gauge puts it. Trend marks come from the icon set and are only ever passed when actually derived.
+### Cluster (signature, overview only)
+The overview is the driver's view of a classic analogue car at night, and its parts are working readings, not illustration.
 
-**The Rendered-Size Numeral Rule.** Scale numerals are sized from the gauge's rendered `size` (`13 / size * 200`), never from the viewBox, or they land at 0.62 of nominal and become unreadable. One numeral only — the top of the range at the end of the sweep — because a single label at full scale has nothing to collide with; the rest of the range reads in the caption beneath.
+- **Windscreen:** A night road under a starred sky, a hill silhouette, a warm headlight pool, lane dashes and guide posts rushing toward the glass. It carries two real readings: the rear-view mirror (chrome rim, hanging at top centre) holds the crew's avatars and opens Members; the green guide sign on posts at the right of the road holds the next stop's title and time and opens the Calendar, or invites a vote when nothing is agreed.
+- **Dial:** A 180° sweep centred on twelve o'clock, so centre-zero reads square with the needle straight up. Recessed binnacle, brushed chrome ring, black face; radium-backlit major ticks (2.6 units) and minors (1.3 units at 55%), word labels on the scale, the dial's name printed on the face beneath with an optional icon, the reading set over the lower face, an orange needle on a chrome-capped black hub. An optional amber caution band sits inside the tick ring. Balance runs OWE / 0 / OWED across plus or minus the largest balance in the group; Budget is a fuel tank, E / ½ / F against the estimate, with the amber band over the last 15%.
+- **Trip Meter:** Mechanical odometer drums, black, with radium digits in instrument numerals, inside a chrome-mid ring; a placard beneath says what is counted (days to go, the day you are on, or days since home).
+- **Warning Lamp:** A recessed dark lens with a symbol from the icon set and a placard beneath. Unlit, the symbol is a dim shape you can just see; lit, the lens is backlit amber, the symbol glows amber beside its count, and the placard turns amber. Each lamp links to the place where the waiting thing is.
 
-**The Money Dial Rule.** Any dial holding cents must be given a `formatScale`. Without one, the raw number prints `59934` on a face that means `$599.34`.
+**The Level-Or-Lamp Rule.** A dial is drawn only where a level is genuinely being read. Anything that is an alert rather than a level is a lamp, and each lamp lights from one honest condition meaning "this is waiting on you". A lamp that is always on is not a lamp.
+
+**The Money Dial Rule.** A dial never formats its own number. The needle is driven by integer cents and the face receives a finished reading from `formatMoney` or `formatMoneyCompact`; the scale carries words (OWE, 0, OWED, E, ½, F), not raw figures.
+
+**The Scale Legibility Rule.** Scale labels are 16 of the dial's 200 units, which holds them at 12px or more only while the dial renders 150px wide or wider. A placement that draws a dial narrower must scale its labels up rather than accept the shrink.
 
 ### States
 Loading, empty, loaded and error are structural, not per-screen: `QueryBoundary` and `ScreenError` make sure a failed load says so rather than falling through to an empty state. Empty and error states are plates with a recessed circular icon well — placard grey for empty, amber for error — a capped line of muted copy, and an optional action.
@@ -321,7 +377,8 @@ Everything in `src/components/ui/` is CLI-generated and stays that way. It is th
 - **Do** put every container on the `plate fixings` treatment — texture, gradient, bezel border, panel shadow, two fixing heads.
 - **Do** recess anything meant to sit below the panel surface (`recessed`), including every gauge face and icon well.
 - **Do** set every measurement in mono tabular, and pass every money figure through `formatMoney` on integer cents.
-- **Do** give every dial an honest denominator and a `formatScale` when it holds cents; size scale numerals from the rendered size.
+- **Do** give every dial an honest range and a finished reading from `formatMoney`; keep its scale labels at 12px or more as rendered.
+- **Do** keep needle orange, chrome, cowl, sky, road and road-sign green on the overview cluster, and let the reading's tone, not the needle, carry the signal.
 - **Do** put labels in placard caps *beneath* the thing they name.
 - **Do** honour `prefers-reduced-motion`: the power-on sweep and needle damping both switch off.
 - **Do** theme shadcn components by moving a CSS variable on `:root`, not by editing the generated component.
@@ -336,4 +393,5 @@ Everything in `src/components/ui/` is CLI-generated and stays that way. It is th
 - **Don't** nest a plate inside a plate, or replace one with a flat fill and a hairline border.
 - **Don't** use a Unicode glyph as an icon or a trend arrow; draw from the icon set.
 - **Don't** decorate with a trend mark that was not actually derived from data.
+- **Don't** draw a dial for an alert, or light a lamp that has nothing waiting behind it.
 - **Don't** store money as a float or format currency anywhere but `formatMoney`.

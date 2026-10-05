@@ -1,5 +1,5 @@
 /*
- * Panel chrome: the plates, placards and strips the instrument world is built
+ * Panel chrome: the plates and placards the instrument world is built
  * from. Nothing here is a card, and nothing nests inside anything else here.
  *
  * The field stays achromatic on purpose. Radium marks a live reading, amber a
@@ -8,11 +8,8 @@
  */
 
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { InstrumentTone, Trend } from '@/components/common/Instrument'
-import { Instrument, TrendMark } from '@/components/common/Instrument'
 import type { ExpenseCategory, IdeaCategory } from '@/types'
 
 /** A bolted-on label plate. Sits under what it names, never above a heading. */
@@ -53,116 +50,6 @@ export function PageHeader({
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </header>
-  )
-}
-
-/**
- * A full-width reading. Label left, value right, supporting line beneath.
- * This is the shape the two questions get answered in.
- */
-export function ReadingStrip({
-  label,
-  value,
-  detail,
-  tone = 'normal',
-  trend,
-  trendLabel,
-  action,
-  className,
-}: {
-  label: string
-  value: string
-  detail: ReactNode
-  tone?: InstrumentTone
-  /** Only pass a trend that is actually derived; never decorate with one. */
-  trend?: Trend
-  trendLabel?: string
-  action?: ReactNode
-  className?: string
-}) {
-  const color =
-    tone === 'caution' ? 'var(--caution)' : tone === 'warning' ? 'var(--warning)' : 'var(--radium)'
-  const glow = tone === 'caution' ? 'glow-caution' : tone === 'warning' ? '' : 'glow-radium'
-
-  return (
-    <section className={cn('plate fixings px-5 py-4', className)}>
-      <div className="flex items-baseline justify-between gap-4">
-        <span className="placard text-xs">{label}</span>
-        <span
-          className={cn('instrument-value text-2xl leading-none', glow)}
-          style={{ color }}
-        >
-          {value}
-        </span>
-      </div>
-      {trend ? (
-        <div className="mt-1.5 flex items-center justify-end gap-1.5">
-          <TrendMark trend={trend} stroke={color} inline />
-          {trendLabel ? (
-            <span className="placard text-xs leading-none">{trendLabel}</span>
-          ) : null}
-        </div>
-      ) : null}
-      <div className="mt-2 text-sm text-muted-foreground">{detail}</div>
-      {action ? <div className="mt-4">{action}</div> : null}
-    </section>
-  )
-}
-
-/** One gauge on the overview grid, and the link to the screen behind it. */
-export function SectionTile({
-  to,
-  label,
-  display,
-  value,
-  max,
-  unit,
-  tone = 'normal',
-  cautionFrom,
-  trend,
-  formatScale,
-  className,
-}: {
-  to: string
-  label: string
-  display: string
-  value: number
-  max: number
-  unit?: string
-  tone?: InstrumentTone
-  cautionFrom?: number
-  trend?: Trend
-  formatScale?: (value: number) => string
-  className?: string
-}) {
-  return (
-    <Link
-      to={to}
-      className={cn(
-        'plate fixings group flex min-h-11 flex-col items-center gap-3 p-4 transition-colors hover:border-bezel-edge focus-visible:border-bezel-edge',
-        className,
-      )}
-    >
-      <Instrument
-        display={display}
-        value={value}
-        max={max}
-        unit={unit}
-        tone={tone}
-        cautionFrom={cautionFrom}
-        trend={trend}
-        formatScale={formatScale}
-        showScale
-        size={124}
-      />
-      <div className="flex w-full flex-col items-center gap-1.5">
-        <Placard className="w-full">{label}</Placard>
-        {/* The unit lives here rather than on the dial, where it collided with the scale. */}
-        {unit ? (
-          <span className="placard text-center text-xs leading-tight">{unit}</span>
-        ) : null}
-      </div>
-    </Link>
   )
 }
 

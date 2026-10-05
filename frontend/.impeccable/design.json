@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-11T00:00:00Z",
+  "generatedAt": "2026-10-05T01:34:52.209Z",
   "title": "Design System: Voyager",
   "extensions": {
     "colorMeta": {
@@ -8,67 +8,382 @@
         "role": "neutral",
         "displayName": "Panel Black",
         "canonical": "#0b0d0f",
-        "tonalRamp": ["#060708", "#0b0d0f", "#14171b", "#20242a", "#2f343b", "#4a5058", "#6f767f", "#a7adb5"]
+        "tonalRamp": [
+          "#060708",
+          "#0b0d0f",
+          "#14171b",
+          "#20242a",
+          "#2f343b",
+          "#4a5058",
+          "#6f767f",
+          "#a7adb5"
+        ]
       },
       "face": {
         "role": "neutral",
         "displayName": "Face",
         "canonical": "#0f1114",
-        "tonalRamp": ["#07080a", "#0f1114", "#171a1f", "#22262c", "#31363e", "#4c525b", "#727982", "#a9afb7"]
+        "tonalRamp": [
+          "#07080a",
+          "#0f1114",
+          "#171a1f",
+          "#22262c",
+          "#31363e",
+          "#4c525b",
+          "#727982",
+          "#a9afb7"
+        ]
       },
       "face-raised": {
         "role": "neutral",
         "displayName": "Face Raised",
         "canonical": "#14171b",
-        "tonalRamp": ["#090a0c", "#14171b", "#1d2126", "#282d34", "#373d45", "#525962", "#787f89", "#aeb4bc"]
+        "tonalRamp": [
+          "#090a0c",
+          "#14171b",
+          "#1d2126",
+          "#282d34",
+          "#373d45",
+          "#525962",
+          "#787f89",
+          "#aeb4bc"
+        ]
       },
       "bezel": {
         "role": "neutral",
         "displayName": "Bezel",
         "canonical": "#2a2d31",
-        "tonalRamp": ["#0e1012", "#171a1d", "#212429", "#2a2d31", "#3a3e44", "#565b63", "#7c828b", "#b1b7bf"]
+        "tonalRamp": [
+          "#0e1012",
+          "#171a1d",
+          "#212429",
+          "#2a2d31",
+          "#3a3e44",
+          "#565b63",
+          "#7c828b",
+          "#b1b7bf"
+        ]
       },
       "bezel-edge": {
         "role": "neutral",
         "displayName": "Bezel Edge",
         "canonical": "#3a3e44",
-        "tonalRamp": ["#131518", "#1d2024", "#272b30", "#31353b", "#3a3e44", "#5b616a", "#828992", "#b6bcc4"]
+        "tonalRamp": [
+          "#131518",
+          "#1d2024",
+          "#272b30",
+          "#31353b",
+          "#3a3e44",
+          "#5b616a",
+          "#828992",
+          "#b6bcc4"
+        ]
       },
       "luminous": {
         "role": "neutral",
         "displayName": "Luminous",
         "canonical": "#f2f5f5",
-        "tonalRamp": ["#191c1c", "#2b2f2f", "#414646", "#5c6262", "#7c8383", "#a2a9a9", "#cbd1d1", "#f2f5f5"]
+        "tonalRamp": [
+          "#191c1c",
+          "#2b2f2f",
+          "#414646",
+          "#5c6262",
+          "#7c8383",
+          "#a2a9a9",
+          "#cbd1d1",
+          "#f2f5f5"
+        ]
       },
       "placard": {
         "role": "neutral",
         "displayName": "Placard Grey",
         "canonical": "#93a0a5",
-        "tonalRamp": ["#161b1d", "#252c2f", "#374043", "#4c5659", "#657174", "#93a0a5", "#b8c2c6", "#dde3e5"]
+        "tonalRamp": [
+          "#161b1d",
+          "#252c2f",
+          "#374043",
+          "#4c5659",
+          "#657174",
+          "#93a0a5",
+          "#b8c2c6",
+          "#dde3e5"
+        ]
       },
       "radium": {
         "role": "primary",
         "displayName": "Radium Green",
         "canonical": "#7cff9e",
-        "tonalRamp": ["#062812", "#0b4520", "#116432", "#188546", "#22a75c", "#3fc978", "#7cff9e", "#c6ffd5"]
+        "tonalRamp": [
+          "#062812",
+          "#0b4520",
+          "#116432",
+          "#188546",
+          "#22a75c",
+          "#3fc978",
+          "#7cff9e",
+          "#c6ffd5"
+        ]
       },
       "caution": {
         "role": "secondary",
         "displayName": "Caution Amber",
         "canonical": "#ffb000",
-        "tonalRamp": ["#2a1b00", "#452d00", "#644100", "#855700", "#a76e00", "#cf8a00", "#ffb000", "#ffdc99"]
+        "tonalRamp": [
+          "#2a1b00",
+          "#452d00",
+          "#644100",
+          "#855700",
+          "#a76e00",
+          "#cf8a00",
+          "#ffb000",
+          "#ffdc99"
+        ]
       },
       "warning": {
         "role": "tertiary",
         "displayName": "Warning Red",
         "canonical": "#ff3b30",
-        "tonalRamp": ["#2d0705", "#4a0c09", "#6b120d", "#8e1a13", "#b3251c", "#d93227", "#ff3b30", "#ffb0ab"]
+        "tonalRamp": [
+          "#2d0705",
+          "#4a0c09",
+          "#6b120d",
+          "#8e1a13",
+          "#b3251c",
+          "#d93227",
+          "#ff3b30",
+          "#ffb0ab"
+        ]
+      },
+      "needle": {
+        "role": "scoped-overview",
+        "displayName": "Needle Orange",
+        "canonical": "#ff6b2c",
+        "tonalRamp": [
+          "#2e0f03",
+          "#4d1a06",
+          "#70270a",
+          "#94340f",
+          "#ba4416",
+          "#e0551f",
+          "#ff6b2c",
+          "#ffc2a6"
+        ]
+      },
+      "chrome-hi": {
+        "role": "scoped-overview",
+        "displayName": "Chrome High",
+        "canonical": "#9aa2aa",
+        "tonalRamp": [
+          "#16181a",
+          "#26292d",
+          "#3a3f45",
+          "#535a61",
+          "#6f777f",
+          "#9aa2aa",
+          "#c1c7cc",
+          "#e6e9ec"
+        ]
+      },
+      "chrome-mid": {
+        "role": "scoped-overview",
+        "displayName": "Chrome Mid",
+        "canonical": "#3a3f45",
+        "tonalRamp": [
+          "#0d0f11",
+          "#191b1e",
+          "#24282c",
+          "#30343a",
+          "#3a3f45",
+          "#5a6168",
+          "#868d94",
+          "#bec3c8"
+        ]
+      },
+      "chrome-lo": {
+        "role": "scoped-overview",
+        "displayName": "Chrome Low",
+        "canonical": "#121417",
+        "tonalRamp": [
+          "#08090a",
+          "#121417",
+          "#1d2024",
+          "#2a2e33",
+          "#3a3f45",
+          "#585e65",
+          "#80868d",
+          "#b9bec3"
+        ]
+      },
+      "cowl": {
+        "role": "scoped-overview",
+        "displayName": "Cowl",
+        "canonical": "#090a0c",
+        "tonalRamp": [
+          "#040506",
+          "#090a0c",
+          "#15171a",
+          "#22252a",
+          "#33373d",
+          "#4f545b",
+          "#767c83",
+          "#adb2b8"
+        ]
+      },
+      "sky-top": {
+        "role": "scoped-overview",
+        "displayName": "Sky Top",
+        "canonical": "#03050a",
+        "tonalRamp": [
+          "#010205",
+          "#03050a",
+          "#0b1018",
+          "#151c28",
+          "#222c3c",
+          "#3b475b",
+          "#64718a",
+          "#a3aec2"
+        ]
+      },
+      "sky-horizon": {
+        "role": "scoped-overview",
+        "displayName": "Sky Horizon",
+        "canonical": "#0d1524",
+        "tonalRamp": [
+          "#050911",
+          "#0d1524",
+          "#172238",
+          "#22314f",
+          "#334669",
+          "#4f6489",
+          "#7a8eaf",
+          "#b6c2d7"
+        ]
+      },
+      "hill-far": {
+        "role": "scoped-overview",
+        "displayName": "Hill Far",
+        "canonical": "#090e17",
+        "tonalRamp": [
+          "#04070c",
+          "#090e17",
+          "#131a26",
+          "#1f2837",
+          "#2f3a4c",
+          "#4b576b",
+          "#738094",
+          "#adb6c4"
+        ]
+      },
+      "hill-near": {
+        "role": "scoped-overview",
+        "displayName": "Hill Near",
+        "canonical": "#05070b",
+        "tonalRamp": [
+          "#020305",
+          "#05070b",
+          "#10141b",
+          "#1c222b",
+          "#2c333e",
+          "#48505c",
+          "#717985",
+          "#abb1ba"
+        ]
+      },
+      "asphalt": {
+        "role": "scoped-overview",
+        "displayName": "Asphalt",
+        "canonical": "#0a0c0f",
+        "tonalRamp": [
+          "#040506",
+          "#0a0c0f",
+          "#15181d",
+          "#21252c",
+          "#31363e",
+          "#4d535c",
+          "#747b84",
+          "#acb1b8"
+        ]
+      },
+      "road-sign": {
+        "role": "scoped-overview",
+        "displayName": "Road Sign Green",
+        "canonical": "oklch(0.4 0.085 160)",
+        "tonalRamp": [
+          "oklch(0.15 0.04 160)",
+          "oklch(0.25 0.06 160)",
+          "oklch(0.33 0.075 160)",
+          "oklch(0.4 0.085 160)",
+          "oklch(0.52 0.09 160)",
+          "oklch(0.65 0.08 160)",
+          "oklch(0.8 0.06 160)",
+          "oklch(0.95 0.03 160)"
+        ]
+      },
+      "verge-far": {
+        "role": "scoped-overview",
+        "displayName": "Verge Far",
+        "canonical": "#050a07",
+        "tonalRamp": [
+          "#020403",
+          "#050a07",
+          "#0b150f",
+          "#132219",
+          "#1e3326",
+          "#33503d",
+          "#567662",
+          "#91ab9a"
+        ]
+      },
+      "verge-near": {
+        "role": "scoped-overview",
+        "displayName": "Verge Near",
+        "canonical": "#0a150e",
+        "tonalRamp": [
+          "#040805",
+          "#0a150e",
+          "#122218",
+          "#1c3123",
+          "#2a4533",
+          "#43644e",
+          "#678a72",
+          "#a3bfac"
+        ]
+      },
+      "foliage": {
+        "role": "scoped-overview",
+        "displayName": "Foliage",
+        "canonical": "#0b1a10",
+        "tonalRamp": [
+          "#040905",
+          "#0b1a10",
+          "#132619",
+          "#1d3524",
+          "#2b4934",
+          "#45684f",
+          "#6a8e74",
+          "#a6c2ae"
+        ]
+      },
+      "foliage-far": {
+        "role": "scoped-overview",
+        "displayName": "Foliage Far",
+        "canonical": "#0a1610",
+        "tonalRamp": [
+          "#040805",
+          "#0a1610",
+          "#122219",
+          "#1b3124",
+          "#294433",
+          "#42624e",
+          "#668872",
+          "#a3bdac"
+        ]
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Instrument Value",
-        "purpose": "Gauge readings, reading-strip values, wordmark, invite code. Saira at 82% width, tabular; on a dial the size is computed from the gauge's rendered size and the reading's own length (0.24 to 0.125 of size)."
+        "purpose": "Dial readings, trip-meter drums, money summary figures, wordmark, invite code. Saira at 82% width, tabular; on a dial the reading steps down with its own length (30, 25, then 21 of the 200-unit face)."
       },
       "headline": {
         "displayName": "Page Heading",
@@ -89,6 +404,14 @@
       "value": {
         "displayName": "Measurement",
         "purpose": "Anything measured: money, times, counts. JetBrains Mono with tnum and zero on, applied by the .tabular class and to bare output/time elements."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "The one tier below the 12px floor: non-interactive annotations beside something already legible (weekday heads, day dividers, timestamps, legends, FOR/AGAINST markers). Nothing tappable uses it."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "shadcn's own control size in Button and Calendar. Recorded because it is on screen; themed through CSS variables, not edited."
       }
     },
     "shadows": [
@@ -116,23 +439,73 @@
         "name": "fixing-head",
         "value": "0 1px 0 0 color-mix(in oklab, white 8%, transparent)",
         "purpose": "The 1px highlight under each 5px corner fixing head on a plate."
+      },
+      {
+        "name": "cowl",
+        "value": "0 1px 0 0 color-mix(in oklab, white 9%, transparent) inset, 0 -10px 24px -8px #000",
+        "purpose": "Overview only. The cowl lit along its lip, throwing shadow up onto the windscreen."
+      },
+      {
+        "name": "binnacle",
+        "value": "inset 0 8px 14px -2px #000, 0 1px 0 0 color-mix(in oklab, white 7%, transparent)",
+        "purpose": "Overview only. The recess a dial is seated in; its top edge shades the face."
+      },
+      {
+        "name": "lamp-lens",
+        "value": "inset 0 2px 5px #000, 0 1px 0 0 color-mix(in oklab, white 7%, transparent)",
+        "purpose": "Overview only. A warning-lamp lens recessed into the cowl."
+      },
+      {
+        "name": "windscreen-glass",
+        "value": "inset 0 0 0 1px #000, inset 0 0 28px 6px #000000c0",
+        "purpose": "Overview only. The dark seal at the windscreen edges."
+      },
+      {
+        "name": "needle-bleed",
+        "value": "drop-shadow(0 0 2.5px color-mix(in oklab, var(--needle) 60%, transparent))",
+        "purpose": "Overview only. Filter on the dial needle: the backlit pointer bleeding its own colour."
+      },
+      {
+        "name": "lamp-glow",
+        "value": "drop-shadow(0 0 6px color-mix(in oklab, var(--caution) 55%, transparent))",
+        "purpose": "Overview only. Filter on a lit lamp symbol. Amber, because something is waiting on you."
       }
     ],
     "motion": [
       {
         "name": "ease-instrument",
         "value": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "The only easing curve in the system. A gauge settles; it does not snap."
+        "purpose": "The easing for all instrument travel: needles, arcs and drums. A gauge settles; it does not snap."
       },
       {
         "name": "duration-damped",
         "value": "620ms",
-        "purpose": "Needle rotation and arc stroke-dashoffset when a value changes."
+        "purpose": "Needle rotation when a value changes."
       },
       {
         "name": "duration-power-on",
         "value": "900ms",
-        "purpose": "The power-on self-test sweep from the 135deg peg, from-only keyframe so each gauge lands on its own value. Disabled under prefers-reduced-motion."
+        "purpose": "The power-on self-test sweep, from-only keyframe so each instrument lands on its own value. Disabled under prefers-reduced-motion."
+      },
+      {
+        "name": "dial-power-on",
+        "value": "1100ms after 120ms",
+        "purpose": "Overview dials: needles leave their scale start (--rest) and sweep to the reading on ease-instrument."
+      },
+      {
+        "name": "drum-roll",
+        "value": "1400ms, 90ms stagger per drum",
+        "purpose": "Overview trip meter: drums roll up from zero to their digit on power-on."
+      },
+      {
+        "name": "drum-damped",
+        "value": "900ms",
+        "purpose": "Overview trip meter: drum travel when the count changes."
+      },
+      {
+        "name": "road-approach",
+        "value": "8s linear infinite",
+        "purpose": "Overview windscreen: lane dashes and posts scale along their ray at 1/z. Transform-only, paused off-screen, frozen under reduced motion."
       }
     ],
     "textures": [
@@ -143,9 +516,18 @@
       }
     ],
     "breakpoints": [
-      { "name": "sm", "value": "640px" },
-      { "name": "md", "value": "768px" },
-      { "name": "container", "value": "56rem (max-w-4xl)" }
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "container",
+        "value": "56rem (max-w-4xl)"
+      }
     ]
   },
   "components": [
@@ -198,22 +580,6 @@
       "css": ".ds-plate { position: relative; padding: 1rem 1.25rem; background: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E\"), linear-gradient(176deg, color-mix(in oklab, var(--bezel-edge, #3a3e44) 20%, var(--face, #0f1114)) 0%, var(--face, #0f1114) 42%, color-mix(in oklab, var(--panel, #0b0d0f) 45%, var(--face, #0f1114)) 100%); border: 1px solid var(--bezel, #2a2d31); border-radius: 0.25rem; box-shadow: 0 1px 0 0 var(--bezel-edge, #3a3e44) inset, 0 8px 24px -12px #000000; } .ds-plate::before, .ds-plate::after { content: ''; position: absolute; inset: 7px 7px auto auto; width: 5px; height: 5px; border-radius: 999px; background: radial-gradient(circle at 32% 30%, var(--bezel-edge, #3a3e44) 0%, var(--bezel, #2a2d31) 58%, color-mix(in oklab, black 45%, var(--bezel, #2a2d31)) 100%); box-shadow: 0 1px 0 0 color-mix(in oklab, white 8%, transparent); } .ds-plate::after { inset: auto auto 7px 7px; } .ds-plate-label { font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 92%; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; color: var(--placard, #93a0a5); } .ds-plate-body { margin: 0.5rem 0 0; font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; color: var(--placard, #93a0a5); }"
     },
     {
-      "name": "Reading Strip",
-      "kind": "custom",
-      "refersTo": "reading-strip",
-      "description": "A full-width reading: placard label left, glowing instrument value right, supporting line beneath.",
-      "html": "<section class=\"ds-strip\"><div class=\"ds-strip-head\"><span class=\"ds-strip-label\">Your balance</span><span class=\"ds-strip-value\">$207.02</span></div><div class=\"ds-strip-detail\">The group owes you $207.02, split evenly across 5 members.</div></section>",
-      "css": ".ds-strip { position: relative; padding: 1rem 1.25rem; background: linear-gradient(176deg, color-mix(in oklab, var(--bezel-edge, #3a3e44) 20%, var(--face, #0f1114)) 0%, var(--face, #0f1114) 42%, color-mix(in oklab, var(--panel, #0b0d0f) 45%, var(--face, #0f1114)) 100%); border: 1px solid var(--bezel, #2a2d31); border-radius: 0.25rem; box-shadow: 0 1px 0 0 var(--bezel-edge, #3a3e44) inset, 0 8px 24px -12px #000000; } .ds-strip::before, .ds-strip::after { content: ''; position: absolute; inset: 7px 7px auto auto; width: 5px; height: 5px; border-radius: 999px; background: radial-gradient(circle at 32% 30%, var(--bezel-edge, #3a3e44) 0%, var(--bezel, #2a2d31) 58%, color-mix(in oklab, black 45%, var(--bezel, #2a2d31)) 100%); } .ds-strip::after { inset: auto auto 7px 7px; } .ds-strip-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; } .ds-strip-label { font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 92%; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; color: var(--placard, #93a0a5); } .ds-strip-value { font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 82%; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; font-size: 1.5rem; line-height: 1; color: var(--radium, #7cff9e); text-shadow: 0 0 18px #7cff9e40, 0 0 5px #7cff9e30; } .ds-strip-detail { margin-top: 0.5rem; font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; color: var(--placard, #93a0a5); }"
-    },
-    {
-      "name": "Instrument",
-      "kind": "custom",
-      "refersTo": "section-tile",
-      "description": "The signature component: a real gauge with tick scale, caution band, filled arc and damped needle, bolted to a plate under a placard.",
-      "html": "<a class=\"ds-tile\" href=\"#\"><svg class=\"ds-gauge\" viewBox=\"0 0 200 200\" width=\"124\" height=\"124\" role=\"presentation\" aria-hidden=\"true\"><circle cx=\"100\" cy=\"100\" r=\"96\" fill=\"var(--bezel, #2a2d31)\"/><circle cx=\"100\" cy=\"100\" r=\"92\" fill=\"var(--panel, #0b0d0f)\" stroke=\"var(--bezel-edge, #3a3e44)\" stroke-width=\"2\"/><path d=\"M 41.99 158.01 A 82 82 0 1 0 41.99 41.99\" fill=\"none\" stroke=\"var(--bezel-edge, #3a3e44)\" stroke-width=\"4\" stroke-linecap=\"round\"/><path class=\"ds-gauge-arc\" d=\"M 41.99 158.01 A 82 82 0 1 0 41.99 41.99\" fill=\"none\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"5\" stroke-linecap=\"round\" pathLength=\"1\" stroke-dasharray=\"1\" stroke-dashoffset=\"0.3\"/><line x1=\"41.99\" y1=\"41.99\" x2=\"50.48\" y2=\"50.48\" stroke=\"var(--luminous, #f2f5f5)\" stroke-width=\"2.5\" opacity=\"0.9\"/><line x1=\"100\" y1=\"18\" x2=\"100\" y2=\"30\" stroke=\"var(--luminous, #f2f5f5)\" stroke-width=\"2.5\" opacity=\"0.9\"/><line x1=\"158.01\" y1=\"41.99\" x2=\"149.52\" y2=\"50.48\" stroke=\"var(--luminous, #f2f5f5)\" stroke-width=\"2.5\" opacity=\"0.9\"/><line x1=\"182\" y1=\"100\" x2=\"170\" y2=\"100\" stroke=\"var(--placard, #93a0a5)\" stroke-width=\"1.25\" opacity=\"0.5\"/><line x1=\"18\" y1=\"100\" x2=\"30\" y2=\"100\" stroke=\"var(--placard, #93a0a5)\" stroke-width=\"1.25\" opacity=\"0.5\"/><text x=\"137\" y=\"137\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"var(--placard, #93a0a5)\" font-size=\"21\" font-family=\"'Saira Variable', sans-serif\" font-stretch=\"82%\">8</text><g class=\"ds-gauge-needle\" style=\"transform: rotate(216deg); transform-origin: 100px 100px;\"><line x1=\"100\" y1=\"112\" x2=\"100\" y2=\"36\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"3\" stroke-linecap=\"round\"/></g><circle cx=\"100\" cy=\"100\" r=\"7\" fill=\"var(--bezel-edge, #3a3e44)\"/><circle cx=\"100\" cy=\"100\" r=\"3\" fill=\"var(--radium, #7cff9e)\"/></svg><span class=\"ds-gauge-value\">5</span><span class=\"ds-tile-placard\">Members</span><span class=\"ds-tile-unit\">of 8 · 3 to agree</span></a>",
-      "css": ".ds-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 1rem; text-decoration: none; background: linear-gradient(176deg, color-mix(in oklab, var(--bezel-edge, #3a3e44) 20%, var(--face, #0f1114)) 0%, var(--face, #0f1114) 42%, color-mix(in oklab, var(--panel, #0b0d0f) 45%, var(--face, #0f1114)) 100%); border: 1px solid var(--bezel, #2a2d31); border-radius: 0.25rem; box-shadow: 0 1px 0 0 var(--bezel-edge, #3a3e44) inset, 0 8px 24px -12px #000000; transition: border-color 0.15s ease; } .ds-tile:hover, .ds-tile:focus-visible { border-color: var(--bezel-edge, #3a3e44); outline: none; } .ds-tile::before, .ds-tile::after { content: ''; position: absolute; inset: 7px 7px auto auto; width: 5px; height: 5px; border-radius: 999px; background: radial-gradient(circle at 32% 30%, var(--bezel-edge, #3a3e44) 0%, var(--bezel, #2a2d31) 58%, color-mix(in oklab, black 45%, var(--bezel, #2a2d31)) 100%); } .ds-tile::after { inset: auto auto 7px 7px; } .ds-gauge { display: block; } .ds-gauge-value { position: absolute; top: 1rem; left: 0; right: 0; height: 124px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20%; pointer-events: none; font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 82%; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; line-height: 1; font-size: 29.76px; color: var(--radium, #7cff9e); text-shadow: 0 0 18px #7cff9e40, 0 0 5px #7cff9e30; } .ds-tile-placard { width: 100%; display: inline-flex; align-items: center; justify-content: center; padding: 0.25rem 0.5rem; font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 92%; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; line-height: 1; color: var(--placard, #93a0a5); border: 1px solid var(--bezel, #2a2d31); border-radius: 0.125rem; } .ds-tile-unit { font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 92%; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; line-height: 1.3; text-align: center; color: var(--placard, #93a0a5); } .ds-gauge-needle { transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1); animation: ds-power-on 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards; } .ds-gauge-arc { transition: stroke-dashoffset 620ms cubic-bezier(0.16, 1, 0.3, 1); animation: ds-arc-power-on 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards; } @keyframes ds-power-on { from { transform: rotate(135deg); } } @keyframes ds-arc-power-on { from { stroke-dashoffset: 1; } } @media (prefers-reduced-motion: reduce) { .ds-gauge-needle, .ds-gauge-arc { transition: none; animation: none; } }"
-    },
-    {
       "name": "Bottom Navigation",
       "kind": "nav",
       "refersTo": "nav-item",
@@ -222,21 +588,45 @@
       "css": ".ds-nav { display: flex; align-items: stretch; background: color-mix(in oklab, var(--panel, #0b0d0f) 95%, transparent); border-top: 1px solid var(--bezel, #2a2d31); backdrop-filter: blur(4px); } .ds-nav-item { flex: 1; min-height: 3.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; padding: 0.5rem 0.25rem; text-decoration: none; color: var(--placard, #93a0a5); transition: color 0.15s ease; } .ds-nav-item:hover { color: var(--luminous, #f2f5f5); } .ds-nav-item:focus-visible { outline: 2px solid var(--radium, #7cff9e); outline-offset: -2px; } .ds-nav-item--active { color: var(--radium, #7cff9e); } .ds-nav-label { font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 92%; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.6875rem; line-height: 1; }"
     },
     {
-      "name": "Empty State",
+      "name": "Dial",
       "kind": "custom",
-      "refersTo": "plate",
-      "description": "A plate with a recessed circular icon well; the error variant swaps the well's icon colour to amber.",
-      "html": "<div class=\"ds-empty\"><span class=\"ds-empty-well\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z\"/><path d=\"M16 12h.01\"/></svg></span><p class=\"ds-empty-line\">No expenses yet. Add the first one and the split works itself out.</p></div>",
-      "css": ".ds-empty { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 2.5rem 1.5rem; text-align: center; background: linear-gradient(176deg, color-mix(in oklab, var(--bezel-edge, #3a3e44) 20%, var(--face, #0f1114)) 0%, var(--face, #0f1114) 42%, color-mix(in oklab, var(--panel, #0b0d0f) 45%, var(--face, #0f1114)) 100%); border: 1px solid var(--bezel, #2a2d31); border-radius: 0.25rem; box-shadow: 0 1px 0 0 var(--bezel-edge, #3a3e44) inset, 0 8px 24px -12px #000000; } .ds-empty-well { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 999px; color: var(--placard, #93a0a5); background: var(--panel, #0b0d0f); border: 1px solid var(--bezel-edge, #3a3e44); box-shadow: 0 2px 6px 0 #00000080 inset; } .ds-empty-line { margin: 0; max-width: 36ch; font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; color: var(--placard, #93a0a5); }"
+      "refersTo": "dial",
+      "description": "Overview only. A 180-degree centre-zero dial in a recessed binnacle: brushed chrome ring, black face, radium-backlit scale with word labels, orange needle on a chrome-capped hub. Drawn only where a level is read.",
+      "html": "<a class=\"ds-dial-wrap\" href=\"#\"><span class=\"ds-binnacle\"><span class=\"ds-dial-bezel\"><svg viewBox=\"0 0 200 200\" width=\"200\" height=\"200\" aria-hidden=\"true\"><defs><radialGradient id=\"ds-face\" cx=\"0.5\" cy=\"0.42\" r=\"0.6\"><stop offset=\"0\" stop-color=\"#13171b\"/><stop offset=\"1\" stop-color=\"#050608\"/></radialGradient><linearGradient id=\"ds-hub\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"var(--chrome-hi, #9aa2aa)\"/><stop offset=\"1\" stop-color=\"var(--chrome-lo, #121417)\"/></linearGradient><filter id=\"ds-backlight\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"140%\"><feGaussianBlur stdDeviation=\"1.6\" result=\"b\"/><feMerge><feMergeNode in=\"b\"/><feMergeNode in=\"SourceGraphic\"/></feMerge></filter></defs><circle cx=\"100\" cy=\"100\" r=\"93\" fill=\"#020303\"/><circle cx=\"100\" cy=\"100\" r=\"93.4\" fill=\"none\" stroke=\"#e4e9ed\" stroke-opacity=\"0.5\" stroke-width=\"0.8\"/><circle cx=\"100\" cy=\"100\" r=\"91\" fill=\"url(#ds-face)\"/><circle cx=\"100\" cy=\"100\" r=\"89\" fill=\"none\" stroke=\"#000\" stroke-opacity=\"0.7\" stroke-width=\"4\"/><g filter=\"url(#ds-backlight)\"><line x1=\"15\" y1=\"100\" x2=\"28\" y2=\"100\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"2.6\"/><line x1=\"17.61\" y1=\"83.61\" x2=\"23.5\" y2=\"84.78\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"22.39\" y1=\"67.85\" x2=\"27.94\" y2=\"70.15\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"30.16\" y1=\"53.33\" x2=\"35.15\" y2=\"56.67\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"39.9\" y1=\"39.9\" x2=\"49.09\" y2=\"49.09\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"2.6\"/><line x1=\"53.33\" y1=\"30.16\" x2=\"56.67\" y2=\"35.15\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"67.85\" y1=\"22.39\" x2=\"70.15\" y2=\"27.94\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"83.61\" y1=\"17.61\" x2=\"84.78\" y2=\"23.5\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"100\" y1=\"15\" x2=\"100\" y2=\"28\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"2.6\"/><line x1=\"116.39\" y1=\"17.61\" x2=\"115.22\" y2=\"23.5\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"132.15\" y1=\"22.39\" x2=\"129.85\" y2=\"27.94\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"146.67\" y1=\"30.16\" x2=\"143.33\" y2=\"35.15\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"160.1\" y1=\"39.9\" x2=\"150.91\" y2=\"49.09\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"2.6\"/><line x1=\"169.84\" y1=\"53.33\" x2=\"164.85\" y2=\"56.67\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"177.61\" y1=\"67.85\" x2=\"172.06\" y2=\"70.15\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"182.39\" y1=\"83.61\" x2=\"176.5\" y2=\"84.78\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"1.3\" stroke-opacity=\"0.55\"/><line x1=\"185\" y1=\"100\" x2=\"172\" y2=\"100\" stroke=\"var(--radium, #7cff9e)\" stroke-width=\"2.6\"/><text x=\"52\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"var(--radium, #7cff9e)\" font-size=\"16\" font-weight=\"500\" font-family=\"'Saira Variable', sans-serif\" font-stretch=\"82%\" letter-spacing=\"0.04em\">OWE</text><text x=\"100\" y=\"42\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"var(--radium, #7cff9e)\" font-size=\"16\" font-weight=\"500\" font-family=\"'Saira Variable', sans-serif\" font-stretch=\"82%\" letter-spacing=\"0.04em\">0</text><text x=\"143\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"var(--radium, #7cff9e)\" font-size=\"16\" font-weight=\"500\" font-family=\"'Saira Variable', sans-serif\" font-stretch=\"82%\" letter-spacing=\"0.04em\">OWED</text><text x=\"100\" y=\"166\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"var(--radium, #7cff9e)\" fill-opacity=\"0.75\" font-size=\"14\" font-family=\"'Saira Variable', sans-serif\" font-stretch=\"92%\" letter-spacing=\"0.14em\">BALANCE</text><text x=\"100\" y=\"136\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"var(--radium, #7cff9e)\" font-size=\"25\" font-weight=\"500\" font-family=\"'Saira Variable', sans-serif\" font-stretch=\"82%\" style=\"font-variant-numeric: tabular-nums\">$207.02</text></g><g class=\"ds-dial-needle\" style=\"transform: rotate(46.6deg); transform-origin: 100px 100px; --rest: -90deg\"><polygon points=\"100,24 102.8,100 101.8,118 98.2,118 97.2,100\" fill=\"var(--needle, #ff6b2c)\"/></g><circle cx=\"100\" cy=\"100\" r=\"11\" fill=\"url(#ds-hub)\"/><circle cx=\"100\" cy=\"100\" r=\"8.5\" fill=\"#07080a\"/></svg></span></span><span class=\"ds-dial-placard\">Owed to you</span></a>",
+      "css": ".ds-dial-wrap { display: inline-flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 1.25rem; text-decoration: none; border-radius: 1.75rem; background: var(--cowl, #090a0c) linear-gradient(180deg, #15171a 0%, var(--cowl, #090a0c) 22%, var(--cowl, #090a0c) 100%); box-shadow: 0 1px 0 0 color-mix(in oklab, white 9%, transparent) inset, 0 -10px 24px -8px #000; } .ds-binnacle { position: relative; display: block; width: 200px; border-radius: 9999px; padding: 5px; background: #030405; box-shadow: inset 0 8px 14px -2px #000, 0 1px 0 0 color-mix(in oklab, white 7%, transparent); } .ds-binnacle::after { content: ''; position: absolute; inset: 5px; border-radius: inherit; background: linear-gradient(180deg, #000000a0 0%, transparent 26%); pointer-events: none; } .ds-dial-bezel { display: block; border-radius: 9999px; background: repeating-conic-gradient(from 0deg, #ffffff0a 0deg 0.6deg, transparent 0.6deg 1.8deg), conic-gradient(from 210deg, #2a2e33 0deg, #8f979f 22deg, #eef2f5 34deg, #8f979f 46deg, #2a2e33 80deg, #131518 160deg, #3a3f45 220deg, #aab1b8 268deg, #3a3f45 300deg, #2a2e33 360deg); } .ds-dial-bezel svg { display: block; width: 100%; height: auto; } .ds-dial-placard { font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 92%; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; line-height: 1; color: var(--placard, #93a0a5); } .ds-dial-wrap:hover .ds-dial-placard, .ds-dial-wrap:focus-visible .ds-dial-placard { color: var(--luminous, #f2f5f5); } .ds-dial-wrap:focus-visible { outline: 2px solid var(--radium, #7cff9e); outline-offset: 2px; } .ds-dial-needle { transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1); animation: ds-dial-power-on 1100ms cubic-bezier(0.16, 1, 0.3, 1) 120ms backwards; filter: drop-shadow(0 0 2.5px color-mix(in oklab, var(--needle, #ff6b2c) 60%, transparent)); } @keyframes ds-dial-power-on { from { transform: rotate(var(--rest)); } } @media (prefers-reduced-motion: reduce) { .ds-dial-needle { animation: none; transition: none; } }"
+    },
+    {
+      "name": "Warning Lamp",
+      "kind": "custom",
+      "refersTo": "warning-lamp",
+      "description": "Overview only. A recessed lens that stays dark until something is waiting on you, then lights amber with its count. Each lamp links to where the waiting thing is.",
+      "html": "<nav class=\"ds-lamps\" aria-label=\"Warning lamps\"><a class=\"ds-lamp ds-lamp--lit\" href=\"#\" aria-label=\"17 unread messages. Open chat.\"><span class=\"ds-lamp-lens\"><span class=\"ds-lamp-symbol\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\"/><path d=\"M8 12h.01\"/><path d=\"M12 12h.01\"/><path d=\"M16 12h.01\"/></svg><span class=\"ds-lamp-count\">17</span></span></span><span class=\"ds-lamp-label\">Chat</span></a><a class=\"ds-lamp\" href=\"#\" aria-label=\"Every booking has a cost. Open bookings.\"><span class=\"ds-lamp-lens\"><span class=\"ds-lamp-symbol\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\"/><path d=\"M14 8H8\"/><path d=\"M16 12H8\"/><path d=\"M13 16H8\"/></svg></span></span><span class=\"ds-lamp-label\">Costs</span></a></nav>",
+      "css": ".ds-lamps { display: grid; grid-template-columns: repeat(2, 6rem); padding: 0.25rem 0.75rem 0.5rem; border-top: 1px solid rgb(255 255 255 / 0.06); background: var(--cowl, #090a0c) linear-gradient(180deg, #15171a 0%, var(--cowl, #090a0c) 22%, var(--cowl, #090a0c) 100%); box-shadow: 0 1px 0 0 color-mix(in oklab, white 9%, transparent) inset, 0 -10px 24px -8px #000; } .ds-lamp { display: flex; min-height: 3.5rem; flex-direction: column; align-items: center; justify-content: center; gap: 0.375rem; padding: 0.5rem 0.25rem; border-radius: 0.375rem; text-decoration: none; } .ds-lamp-lens { display: flex; align-items: center; justify-content: center; min-width: 3.25rem; height: 2.25rem; padding-inline: 0.5rem; border-radius: 0.375rem; background: #030405; box-shadow: inset 0 2px 5px #000, 0 1px 0 0 color-mix(in oklab, white 7%, transparent); transition: background-color 200ms ease-out; } .ds-lamp-symbol { display: flex; align-items: center; gap: 0.25rem; color: color-mix(in oklab, var(--placard, #93a0a5) 34%, var(--cowl, #090a0c)); } .ds-lamp-count { font-family: 'JetBrains Mono Variable', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.875rem; font-weight: 600; line-height: 1; } .ds-lamp-label { font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 92%; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; line-height: 1; color: var(--placard, #93a0a5); opacity: 0.75; transition: opacity 0.15s ease; } .ds-lamp:hover .ds-lamp-label { opacity: 1; } .ds-lamp:hover .ds-lamp-lens, .ds-lamp:focus-visible .ds-lamp-lens { box-shadow: inset 0 2px 5px #000, 0 0 0 1px var(--bezel-edge, #3a3e44); } .ds-lamp:focus-visible { outline: 2px solid var(--radium, #7cff9e); outline-offset: 2px; } .ds-lamp--lit .ds-lamp-lens { background: radial-gradient(ellipse at 50% 55%, color-mix(in oklab, var(--caution, #ffb000) 26%, #030405) 0%, #0a0703 85%); } .ds-lamp--lit .ds-lamp-symbol { color: var(--caution, #ffb000); filter: drop-shadow(0 0 6px color-mix(in oklab, var(--caution, #ffb000) 55%, transparent)); } .ds-lamp--lit .ds-lamp-label { color: var(--caution, #ffb000); opacity: 1; }"
+    },
+    {
+      "name": "Trip Meter",
+      "kind": "custom",
+      "refersTo": "trip-meter",
+      "description": "Overview only. Mechanical odometer drums with radium digits that roll up to the count on power-on; a placard beneath says what is counted.",
+      "html": "<div class=\"ds-meter\"><span class=\"ds-meter-drums\" aria-hidden=\"true\"><span class=\"ds-drum\"><span class=\"ds-drum-strip\" style=\"--d: 0; animation-delay: 0ms\"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span><span class=\"ds-drum\"><span class=\"ds-drum-strip\" style=\"--d: 1; animation-delay: 90ms\"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span><span class=\"ds-drum\"><span class=\"ds-drum-strip\" style=\"--d: 8; animation-delay: 180ms\"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></span><span class=\"ds-meter-label\">Days to go</span></div>",
+      "css": ".ds-meter { display: inline-flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 1rem 1.5rem; border-radius: 1.75rem; background: var(--cowl, #090a0c) linear-gradient(180deg, #15171a 0%, var(--cowl, #090a0c) 22%, var(--cowl, #090a0c) 100%); box-shadow: 0 1px 0 0 color-mix(in oklab, white 9%, transparent) inset, 0 -10px 24px -8px #000; } .ds-meter-drums { display: flex; overflow: hidden; border-radius: 3px; border: 1px solid #000; background: #000; box-shadow: 0 0 0 2px var(--chrome-mid, #3a3f45), 0 2px 6px #000; font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 82%; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; font-size: 1.5rem; line-height: 1; color: var(--radium, #7cff9e); } .ds-drum { position: relative; display: inline-block; width: 0.82em; height: 1.3em; overflow: hidden; background: linear-gradient(180deg, #000 0%, #16191c 30%, #1c2024 50%, #16191c 70%, #000 100%); border-inline: 1px solid #000; } .ds-drum-strip { display: flex; flex-direction: column; text-shadow: 0 0 18px #7cff9e40, 0 0 5px #7cff9e30; transform: translateY(calc(var(--d) * -1.3em)); transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1); animation: ds-drum-roll 1400ms cubic-bezier(0.16, 1, 0.3, 1) backwards; } .ds-drum-strip > span { height: 1.3em; line-height: 1.3em; text-align: center; } @keyframes ds-drum-roll { from { transform: translateY(0); } } .ds-meter-label { font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-stretch: 92%; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; line-height: 1; color: var(--placard, #93a0a5); } @media (prefers-reduced-motion: reduce) { .ds-drum-strip { animation: none; transition: none; } }"
+    },
+    {
+      "name": "Road Sign",
+      "kind": "custom",
+      "refersTo": "road-sign",
+      "description": "Overview only. The green roadside guide sign on posts in the windscreen, carrying the next stop and its time. Links to the calendar.",
+      "html": "<a class=\"ds-sign\" href=\"#\"><span class=\"ds-sign-plate\"><span class=\"ds-sign-face\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7\"/><path d=\"M12 19V5\"/></svg><span class=\"ds-sign-text\"><span class=\"ds-sign-title\">JQ 610 BNE to MEL</span><time class=\"ds-sign-time\">06:20 · Thu 22 Oct</time></span></span></span><span class=\"ds-sign-posts\" aria-hidden=\"true\"><span></span><span></span></span></a>",
+      "css": ".ds-sign { display: inline-flex; width: 17rem; flex-direction: column; align-items: stretch; padding: 1.5rem; text-decoration: none; background: linear-gradient(180deg, var(--sky-top, #03050a), var(--sky-horizon, #0d1524)); } .ds-sign-plate { border-radius: 0.375rem; padding: 3px; background: var(--road-sign, oklch(0.4 0.085 160)); box-shadow: 0 6px 18px -6px #000; transition: filter 0.15s ease; } .ds-sign:hover .ds-sign-plate { filter: brightness(1.1); } .ds-sign:focus-visible { outline: 2px solid var(--radium, #7cff9e); outline-offset: 2px; } .ds-sign-face { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem 0.625rem; border: 2px solid var(--luminous, #f2f5f5); border-radius: 0.3rem; color: var(--luminous, #f2f5f5); } .ds-sign-face svg { flex-shrink: 0; margin-top: 0.125rem; } .ds-sign-text { display: flex; min-width: 0; flex-direction: column; gap: 0.125rem; font-family: 'Saira Variable', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; line-height: 1.25; } .ds-sign-title { font-weight: 600; } .ds-sign-time { font-variant-numeric: tabular-nums; } .ds-sign-posts { display: flex; justify-content: space-between; padding: 0 22%; } .ds-sign-posts span { width: 4px; height: 2rem; background: #4a5057; }"
     }
   ],
   "narrative": {
     "northStar": "The Night Instrument Panel",
-    "overview": "Voyager is read in a car at night, by someone who has ten seconds and one thumb. So the app is not a dashboard that borrows gauge imagery; it is an instrument panel with working instruments. Every reading is a real gauge with a tick scale, a caution band, a filled arc and a needle that damps rather than snaps. Every container is a plate bolted to the panel, with visible corner fixings, a satin bezel that catches light along its top edge, and a fine matte texture over the fill. The materials come first, and the layout is what fits between them.\n\nThe field is achromatic on purpose, and that is the load-bearing decision of the whole system. Panel, face, bezel and placard are all tinted off one hue and none of them is a pure grey or a pure black. Against that field there are exactly three chromatic signals with fixed meanings: radium green is a live reading, caution amber is a figure that wants your attention, warning red is destructive only and never decorates. Because nothing else on screen carries chroma, a single amber needle is impossible to miss. The moment a fourth colour appears — a category palette, a chart hue, a brand accent — the signal system stops working.\n\nThe app is dark only, by explicit decision. There is no light theme and no `.dark` class to toggle: `:root` carries `color-scheme: dark` and the palette directly. A light mode would not be a variant of this world, it would be a different world. Density is high and rhythm is tight (a 0.75rem–1rem gap dominates), corners are machined rather than soft (0.25rem base radius), and the app spends its one authored motion moment on the power-on self-test sweep when the panel comes alive.",
+    "overview": "Voyager is read in a car at night, by someone who has ten seconds and one thumb. So the app is not a dashboard that borrows gauge imagery; it is an instrument panel with working instruments. Where a level is genuinely being read it is a real dial with a tick scale, a caution band and a needle that damps rather than snaps; anything that is an alert rather than a level is a warning lamp that stays dark until it is needed. Every container is a plate bolted to the panel, with visible corner fixings, a satin bezel that catches light along its top edge, and a fine matte texture over the fill. The materials come first, and the layout is what fits between them.\n\nThe field is achromatic on purpose, and that is the load-bearing decision of the whole system. Panel, face, bezel and placard are all tinted off one hue and none of them is a pure grey or a pure black. Against that field there are exactly three chromatic signals with fixed meanings: radium green is a live reading, caution amber is a figure that wants your attention, warning red is destructive only and never decorates. Because nothing else on screen carries chroma, a single amber needle is impossible to miss. The moment a fourth colour appears — a category palette, a chart hue, a brand accent — the signal system stops working.\n\nThe app is dark only, by explicit decision. There is no light theme and no `.dark` class to toggle: `:root` carries `color-scheme: dark` and the palette directly. A light mode would not be a variant of this world, it would be a different world. Density is high and rhythm is tight (a 0.75rem–1rem gap dominates), corners are machined rather than soft (0.25rem base radius), and the app spends its one authored motion moment on the power-on self-test sweep when the panel comes alive.\n\nOne screen goes further. The overview (the Panel tab) is the driver's view of a classic analogue car at night: a windscreen with the road moving toward the glass, a cowl holding two chrome-ringed, green-backlit dials with orange needles, mechanical odometer drums, and a strip of warning lamps. It is a scoped exception with its own materials (see The Driver's Seat Exception); the backlight stays radium and the Three Signals keep their meanings, so it still reads as the same app. Every other screen stays on plates.",
     "keyCharacteristics": [
       "Dark only; no light theme, no theme toggle.",
       "Achromatic field, three fixed-meaning signal colours.",
-      "Real gauges with scales, bands, needles and damped travel.",
+      "A dial only where a level is read; alerts are lamps that stay dark until something waits on you.",
       "Plates with fixings, texture and a lit bezel edge — never flat cards.",
       "Uppercase letterspaced placards that sit *under* what they name.",
       "Measurements set in tabular mono; readings in condensed instrument numerals."
@@ -263,6 +653,11 @@
         "section": "colors"
       },
       {
+        "name": "The Driver's Seat Exception",
+        "body": "The overview cluster is the one place the windscreen and cluster materials are allowed: needle orange, the three chromes, cowl, sky, hills, verge, foliage, asphalt and road-sign green, plus the warm low-beam light screened over the road. They are confined to the Panel tab and are never used on another screen, as text, or as a fill on a control. None of them carries meaning. The cluster's backlight is radium, a dial reading takes radium, amber or placard by the Three Signals, and a lit lamp is amber because something waits on you; orange is only ever the needle.",
+        "section": "colors"
+      },
+      {
         "name": "The Placard Rule",
         "body": "Uppercase letterspaced caps are a label plate bolted under the thing they name. They never sit above a heading as a kicker or an eyebrow. A placard names an instrument; it does not introduce a title.",
         "section": "typography"
@@ -284,22 +679,27 @@
       },
       {
         "name": "The Phosphor Rule",
-        "body": "Glow marks a live reading and nothing else. It is never applied as trim, to a heading, to a border, or to a destructive colour.",
+        "body": "Glow marks a live reading and nothing else. It is never applied as trim, to a heading, to a border, or to a destructive colour. On the overview the same material is backlight: dial markings bleed a little light into the face, the trip-meter digits glow radium, a lit lamp glows amber, and the needle carries a soft bleed of its own colour.",
         "section": "elevation"
       },
       {
         "name": "The Power-On Rule",
-        "body": "The one authored motion moment is the self-test sweep: needles and arcs leave the 135° peg together over 900ms on cubic-bezier(0.16, 1, 0.3, 1), using a from-only keyframe so each gauge lands on its own value. Value changes afterwards are damped over 620ms on the same curve — a real gauge settles, it does not snap. Both are fully disabled under prefers-reduced-motion: reduce, alongside a global reduction of all animation and scroll behaviour.",
+        "body": "The one authored motion moment is the self-test sweep, on cubic-bezier(0.16, 1, 0.3, 1) with a from-only keyframe so each instrument lands on its own value. On the overview the dial needles leave their scale start over 1100ms after a 120ms beat, and the odometer drums roll up from zero over 1400ms, staggered 90ms per drum. Value changes afterwards are damped on the same curve (620ms for a needle, 900ms for a drum) — a real gauge settles, it does not snap. The road is the only loop: transform-only perspective motion, 8s linear, paused whenever the windscreen is off-screen. All of it is disabled under prefers-reduced-motion: reduce, alongside a global reduction of all animation and scroll behaviour, and the road then rests on a frozen frame.",
         "section": "elevation"
       },
       {
-        "name": "The Rendered-Size Numeral Rule",
-        "body": "Scale numerals are sized from the gauge's rendered size (13 / size * 200), never from the viewBox, or they land at 0.62 of nominal and become unreadable. One numeral only — the top of the range at the end of the sweep — because a single label at full scale has nothing to collide with; the rest of the range reads in the caption beneath.",
+        "name": "The Level-Or-Lamp Rule",
+        "body": "A dial is drawn only where a level is genuinely being read. Anything that is an alert rather than a level is a lamp, and each lamp lights from one honest condition meaning \"this is waiting on you\". A lamp that is always on is not a lamp.",
         "section": "components"
       },
       {
         "name": "The Money Dial Rule",
-        "body": "Any dial holding cents must be given a formatScale. Without one, the raw number prints 59934 on a face that means $599.34.",
+        "body": "A dial never formats its own number. The needle is driven by integer cents and the face receives a finished reading from formatMoney or formatMoneyCompact; the scale carries words (OWE, 0, OWED, E, ½, F), not raw figures.",
+        "section": "components"
+      },
+      {
+        "name": "The Scale Legibility Rule",
+        "body": "Scale labels are 16 of the dial's 200 units, which holds them at 12px or more only while the dial renders 150px wide or wider. A placement that draws a dial narrower must scale its labels up rather than accept the shrink.",
         "section": "components"
       }
     ],
@@ -308,7 +708,8 @@
       "Do put every container on the plate fixings treatment — texture, gradient, bezel border, panel shadow, two fixing heads.",
       "Do recess anything meant to sit below the panel surface (recessed), including every gauge face and icon well.",
       "Do set every measurement in mono tabular, and pass every money figure through formatMoney on integer cents.",
-      "Do give every dial an honest denominator and a formatScale when it holds cents; size scale numerals from the rendered size.",
+      "Do give every dial an honest range and a finished reading from formatMoney; keep its scale labels at 12px or more as rendered.",
+      "Do keep needle orange, chrome, cowl, sky, road and road-sign green on the overview cluster, and let the reading's tone, not the needle, carry the signal.",
       "Do put labels in placard caps beneath the thing they name.",
       "Do honour prefers-reduced-motion: the power-on sweep and needle damping both switch off.",
       "Do theme shadcn components by moving a CSS variable on :root, not by editing the generated component."
@@ -323,6 +724,7 @@
       "Don't nest a plate inside a plate, or replace one with a flat fill and a hairline border.",
       "Don't use a Unicode glyph as an icon or a trend arrow; draw from the icon set.",
       "Don't decorate with a trend mark that was not actually derived from data.",
+      "Don't draw a dial for an alert, or light a lamp that has nothing waiting behind it.",
       "Don't store money as a float or format currency anywhere but formatMoney."
     ]
   }

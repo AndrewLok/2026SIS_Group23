@@ -6,7 +6,7 @@
 
 /*
   Voyager — night instrument panel.
-  Direction contract: .impeccable/surfaces/src-pages-tripoverview-tsx.md
+  Design system: DESIGN.md
   Dark only, by decision: the recorded scene is late night, in a car, low light.
   Every neutral is tinted off the panel hue; nothing here is a pure grey or a pure black.
 */
@@ -150,6 +150,28 @@
 
     /* Placard lettering: letterspaced technical caps. */
     --placard-tracking: 0.12em;
+
+    /*
+      The overview is the driver's view of a classic car at night. These belong
+      to that one screen: the needle, the chrome, the road and the sign. The
+      backlight stays radium so the cluster still reads as the same app.
+    */
+    --needle: #ff6b2c;
+    --chrome-hi: #9aa2aa;
+    --chrome-mid: #3a3f45;
+    --chrome-lo: #121417;
+    --cowl: #090a0c;
+    --sky-top: #03050a;
+    --sky-horizon: #0d1524;
+    --hill-far: #090e17;
+    --hill-near: #05070b;
+    --asphalt: #0a0c0f;
+    /* Night bush: dark enough to sit back, green enough to read as growth. */
+    --verge-far: #050a07;
+    --verge-near: #0a150e;
+    --foliage: #0b1a10;
+    --foliage-far: #0a1610;
+    --road-sign: oklch(0.4 0.085 160);
 }
 
 @layer base {
@@ -198,53 +220,6 @@
     .caption {
         font-size: 0.6875rem;
         line-height: 1.2;
-    }
-
-    /*
-      Needle travel is damped, the way a real gauge settles. Exponential
-      ease-out from wherever it already is, never a snap to the new value.
-    */
-    .instrument-needle {
-        transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .instrument-arc {
-        transition: stroke-dashoffset 620ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    /*
-      Power-on self test. A real panel sweeps its instruments from rest when it
-      comes alive, which is the one authored moment this app gets: the needle
-      and its arc leave the peg together and settle on the reading. Only a
-      `from` keyframe, so each gauge lands on its own value rather than a
-      hardcoded one.
-    */
-    @keyframes instrument-power-on {
-        from {
-            transform: rotate(135deg);
-        }
-    }
-
-    @keyframes instrument-arc-power-on {
-        from {
-            stroke-dashoffset: 1;
-        }
-    }
-
-    .instrument-needle {
-        animation: instrument-power-on 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-    }
-
-    .instrument-arc {
-        animation: instrument-arc-power-on 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .instrument-needle,
-        .instrument-arc {
-            transition: none;
-            animation: none;
-        }
     }
 
     /*
@@ -361,6 +336,210 @@
 
     ::-webkit-scrollbar-thumb:hover {
         background: var(--placard);
+    }
+
+    /*
+      The windscreen. Every moving thing on the road is drawn once at a
+      reference depth and scaled about the vanishing point, so it travels along
+      its own ray toward the glass. Scale follows 1/z for constant speed, which
+      is why it lingers near the horizon and rushes past at the end.
+    */
+    .road-mover {
+        transform-box: view-box;
+        transform-origin: 200px 118px;
+        /* Duration is set per mover by the windscreen, so speed lives in one place. */
+        animation: road-approach linear infinite;
+    }
+
+    .windscreen[data-paused] .road-mover {
+        animation-play-state: paused;
+    }
+
+    @keyframes road-approach {
+        0% { transform: scale(0.03); opacity: 0; }
+        25% { transform: scale(0.04); opacity: 0.6; }
+        50% { transform: scale(0.06); opacity: 1; }
+        70% { transform: scale(0.0985); }
+        80% { transform: scale(0.145); }
+        88% { transform: scale(0.234); }
+        93% { transform: scale(0.379); }
+        96% { transform: scale(0.601); }
+        98% { transform: scale(0.99); }
+        99% { transform: scale(1.46); }
+        100% { transform: scale(2.8); opacity: 1; }
+    }
+
+    /* The glass itself: a dark seal at the edges and one faint raked sheen. */
+    .windscreen-glass {
+        box-shadow:
+            inset 0 0 0 1px #000,
+            inset 0 0 28px 6px #000000c0;
+        background: linear-gradient(
+            112deg,
+            transparent 38%,
+            color-mix(in oklab, white 5%, transparent) 46%,
+            transparent 58%
+        );
+    }
+
+    /* The cowl the cluster sits under: grained dark plastic, lit on its lip. */
+    .cowl {
+        background:
+            var(--texture-fine),
+            linear-gradient(180deg, #15171a 0%, var(--cowl) 22%, var(--cowl) 100%);
+        box-shadow:
+            0 1px 0 0 color-mix(in oklab, white 9%, transparent) inset,
+            0 -10px 24px -8px #000;
+    }
+
+    /*
+      Dial needles are damped the way a real gauge settles, and on power-on
+      sweep up from their own scale start, which each dial passes as --rest.
+    */
+    .dial-needle {
+        transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+        animation: dial-power-on 1100ms cubic-bezier(0.16, 1, 0.3, 1) 120ms backwards;
+        filter: drop-shadow(0 0 2.5px color-mix(in oklab, var(--needle) 60%, transparent));
+    }
+
+    @keyframes dial-power-on {
+        from {
+            transform: rotate(var(--rest));
+        }
+    }
+
+    /* Trip meter drums roll up from zero to their digit on power-on. */
+    .drum {
+        position: relative;
+        display: inline-block;
+        width: 0.82em;
+        height: 1.3em;
+        overflow: hidden;
+        background: linear-gradient(
+            180deg,
+            #000 0%,
+            #16191c 30%,
+            #1c2024 50%,
+            #16191c 70%,
+            #000 100%
+        );
+        border-inline: 1px solid #000;
+    }
+
+    .drum-strip {
+        display: flex;
+        flex-direction: column;
+        transform: translateY(calc(var(--d) * -1.3em));
+        transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        animation: drum-roll 1400ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    .drum-strip > span {
+        height: 1.3em;
+        line-height: 1.3em;
+        text-align: center;
+    }
+
+    @keyframes drum-roll {
+        from {
+            transform: translateY(0);
+        }
+    }
+
+    /* A lit warning lamp glows; an unlit one is a dark shape you can just see. */
+    .lamp-lit {
+        color: var(--caution);
+        filter: drop-shadow(0 0 6px color-mix(in oklab, var(--caution) 55%, transparent));
+    }
+
+    .lamp-off {
+        color: color-mix(in oklab, var(--placard) 34%, var(--cowl));
+    }
+
+    /* The lens a telltale sits behind: recessed and dark until it is backlit. */
+    .lamp-lens {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 3.25rem;
+        height: 2.25rem;
+        padding-inline: 0.5rem;
+        border-radius: 0.375rem;
+        background: #030405;
+        box-shadow:
+            inset 0 2px 5px #000,
+            0 1px 0 0 color-mix(in oklab, white 7%, transparent);
+        transition: background-color 200ms ease-out;
+    }
+
+    .lamp-lens-lit {
+        background: radial-gradient(
+            ellipse at 50% 55%,
+            color-mix(in oklab, var(--caution) 26%, #030405) 0%,
+            #0a0703 85%
+        );
+    }
+
+    .group:hover .lamp-lens,
+    .group:focus-visible .lamp-lens {
+        box-shadow:
+            inset 0 2px 5px #000,
+            0 0 0 1px var(--bezel-edge);
+    }
+
+    /*
+      A dial seated in the cowl: a recessed binnacle around a brushed chrome
+      ring, with the cowl's lip throwing shade across the top of the face.
+    */
+    .binnacle {
+        position: relative;
+        border-radius: 9999px;
+        padding: 5px;
+        background: #030405;
+        box-shadow:
+            inset 0 8px 14px -2px #000,
+            0 1px 0 0 color-mix(in oklab, white 7%, transparent);
+    }
+
+    .binnacle::after {
+        content: '';
+        position: absolute;
+        inset: 5px;
+        border-radius: inherit;
+        background: linear-gradient(180deg, #000000a0 0%, transparent 26%);
+        pointer-events: none;
+    }
+
+    .dial-bezel {
+        border-radius: 9999px;
+        background:
+            repeating-conic-gradient(
+                from 0deg,
+                #ffffff0a 0deg 0.6deg,
+                transparent 0.6deg 1.8deg
+            ),
+            conic-gradient(
+                from 210deg,
+                #2a2e33 0deg,
+                #8f979f 22deg,
+                #eef2f5 34deg,
+                #8f979f 46deg,
+                #2a2e33 80deg,
+                #131518 160deg,
+                #3a3f45 220deg,
+                #aab1b8 268deg,
+                #3a3f45 300deg,
+                #2a2e33 360deg
+            );
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .road-mover,
+        .dial-needle,
+        .drum-strip {
+            animation: none;
+            transition: none;
+        }
     }
 
     /* Honour the setting rather than animating regardless. */
