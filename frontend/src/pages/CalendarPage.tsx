@@ -54,10 +54,10 @@ function AgendaView({
     return (
       <EmptyState
         icon={CalendarDays}
-        line="Nothing agreed yet. Once enough of you are for an idea it lands here, along with any booking that has a time."
+        line="Nothing planned yet. Activities land here once they are added or voted in, along with any booking that has a time."
         action={
           <Button asChild variant="outline" size="sm">
-            <Link to={`/trips/${tripId}/voting`}>Go to voting</Link>
+            <Link to={`/trips/${tripId}/activities`}>Go to activities</Link>
           </Button>
         }
       />
@@ -237,7 +237,7 @@ export function CalendarPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Calendar"
-        subtitle="Agreed ideas and bookings, in one list. Nothing here is stored twice."
+        subtitle="Activities and bookings, in one list. Nothing here is stored twice."
         action={
           <Button asChild variant="outline" size="sm">
             <Link to={`/trips/${tripId}/bookings`}>
@@ -282,11 +282,11 @@ export function CalendarPage() {
                     <Link
                       to={
                         open.source === 'idea'
-                          ? `/trips/${tripId}/voting`
+                          ? `/trips/${tripId}/activities`
                           : `/trips/${tripId}/bookings`
                       }
                     >
-                      {open.source === 'idea' ? 'Open in voting' : 'Open in bookings'}
+                      {open.source === 'idea' ? 'Open in activities' : 'Open in bookings'}
                     </Link>
                   </Button>
                 </div>

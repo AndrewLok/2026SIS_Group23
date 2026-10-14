@@ -46,17 +46,22 @@ export const hasReachedThreshold = (agreeCount: number, memberCount: number): bo
  * The status an idea should hold given its current votes. Called after every
  * vote so an idea crossing the line moves tab without anyone reloading.
  * Only ever promotes to agreed or demotes back to voting; a rejection is a
- * deliberate act by the owner or proposer, never a vote count.
+ * deliberate act by the owner or proposer, never a vote count, and a planned
+ * activity was never put to a vote in the first place.
  */
 export function derivedStatus(
   idea: Idea,
   agreeCount: number,
   memberCount: number,
 ): Idea['status'] {
-  if (idea.status === 'rejected') return 'rejected'
+  if (idea.status === 'rejected' || idea.status === 'planned') return idea.status
   return hasReachedThreshold(agreeCount, memberCount) ? 'agreed' : 'voting'
 }
 
-/** An agreed idea with no date cannot be placed on the calendar yet. */
+/** Going ahead: either added straight to the plan or voted in. */
+export const isOnThePlan = (idea: Idea): boolean =>
+  idea.status === 'planned' || idea.status === 'agreed'
+
+/** An activity going ahead with no date cannot be placed on the calendar yet. */
 export const needsADate = (idea: Idea): boolean =>
-  idea.status === 'agreed' && idea.proposedStart === null
+  isOnThePlan(idea) && idea.proposedStart === null

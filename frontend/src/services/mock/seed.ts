@@ -99,6 +99,7 @@ export function buildSeed(): Db {
         all_day: false,
         status: 'agreed',
         proposed_by: PRIYA,
+        attendee_ids: [PRIYA, LACHLAN, ETHAN, MIA, JONAS],
         created_at: at(-30),
       },
       {
@@ -112,6 +113,7 @@ export function buildSeed(): Db {
         all_day: false,
         status: 'agreed',
         proposed_by: ETHAN,
+        attendee_ids: [ETHAN, LACHLAN, MIA, PRIYA],
         created_at: at(-28),
       },
       {
@@ -125,6 +127,7 @@ export function buildSeed(): Db {
         all_day: false,
         status: 'agreed',
         proposed_by: MIA,
+        attendee_ids: [MIA, JONAS, ETHAN, LACHLAN],
         created_at: at(-25),
       },
       {
@@ -138,7 +141,23 @@ export function buildSeed(): Db {
         all_day: false,
         status: 'agreed',
         proposed_by: LACHLAN,
+        attendee_ids: [LACHLAN, PRIYA, MIA],
         created_at: at(-24),
+      },
+      // Added straight to the plan, no vote. The demo user is not in yet.
+      {
+        id: 'idea-markets',
+        trip_id: TRIP,
+        title: 'Apollo Bay Saturday market',
+        description: 'Breakfast from the stalls, then a wander. Back by eleven.',
+        category: 'food',
+        proposed_start: at(TRIP_START_OFFSET + 3, 8, 30),
+        proposed_end: null,
+        all_day: false,
+        status: 'planned',
+        proposed_by: MIA,
+        attendee_ids: [MIA, PRIYA],
+        created_at: at(-3),
       },
       {
         id: 'idea-kayak',
@@ -417,6 +436,8 @@ export function buildSeed(): Db {
         category: 'tickets',
         source: 'manual',
         source_id: null,
+        // Two places held. Ethan owes Jonas for his; the other is Jonas's own.
+        split: { kind: 'exact', amounts: { [ETHAN]: 4_000 } },
       },
       {
         id: 'exp-parkpass',
@@ -439,6 +460,8 @@ export function buildSeed(): Db {
         category: 'food',
         source: 'manual',
         source_id: null,
+        // Only the three in the car that morning.
+        split: { kind: 'equal', user_ids: [PRIYA, LACHLAN, ETHAN] },
       },
       // Three fuel-sourced expenses, written through from the legs above.
       // These split across riders only, which is why the fuel leg carries its

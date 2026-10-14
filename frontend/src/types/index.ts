@@ -10,7 +10,11 @@
 
 export type Role = 'owner' | 'member'
 export type IdeaCategory = 'activity' | 'food' | 'stay' | 'travel'
-export type IdeaStatus = 'voting' | 'agreed' | 'rejected'
+/**
+ * planned: added straight to the plan, no vote needed.
+ * voting, agreed, rejected: put to the group and decided by votes.
+ */
+export type IdeaStatus = 'planned' | 'voting' | 'agreed' | 'rejected'
 export type BookingType = 'flight' | 'stay' | 'car' | 'other'
 export type ExpenseCategory = 'food' | 'transport' | 'tickets' | 'stay' | 'other'
 export type ExpenseSource = 'manual' | 'fuel'
@@ -59,6 +63,8 @@ export type Idea = {
   allDay: boolean
   status: IdeaStatus
   proposedBy: string
+  /** Who is going. Shown once an activity is planned or agreed. */
+  attendeeIds: string[]
   createdAt: string
 }
 
@@ -99,6 +105,18 @@ export type FuelLeg = {
   createdAt: string
 }
 
+/**
+ * How a manual expense is shared. Null means the original rule: everyone on the
+ * trip, evenly. Fuel expenses ignore this and use the leg's riders.
+ *
+ * equal: split evenly across the named members, the payer included if named.
+ * exact: what each named member owes the payer. Whatever is left of the total
+ *        is the payer's own share.
+ */
+export type ExpenseSplit =
+  | { kind: 'equal'; userIds: string[] }
+  | { kind: 'exact'; amounts: Record<string, number> }
+
 export type Expense = {
   id: string
   tripId: string
@@ -110,6 +128,7 @@ export type Expense = {
   source: ExpenseSource
   /** The fuel leg id when source is 'fuel'. */
   sourceId: string | null
+  split: ExpenseSplit | null
 }
 
 export type Channel = {
@@ -169,6 +188,8 @@ export type IdeaRow = {
   all_day: boolean
   status: IdeaStatus
   proposed_by: string
+  /** Optional so rows saved before attendance existed still load. */
+  attendee_ids?: string[]
   created_at: string
 }
 
@@ -207,6 +228,10 @@ export type FuelLegRow = {
   created_at: string
 }
 
+export type ExpenseSplitRow =
+  | { kind: 'equal'; user_ids: string[] }
+  | { kind: 'exact'; amounts: Record<string, number> }
+
 export type ExpenseRow = {
   id: string
   trip_id: string
@@ -217,6 +242,8 @@ export type ExpenseRow = {
   category: ExpenseCategory
   source: ExpenseSource
   source_id: string | null
+  /** Optional so rows saved before custom splits existed still load. */
+  split?: ExpenseSplitRow | null
 }
 
 export type ChannelRow = {
@@ -276,6 +303,7 @@ export const toIdea = (r: IdeaRow): Idea => ({
   allDay: r.all_day,
   status: r.status,
   proposedBy: r.proposed_by,
+  attendeeIds: [...(r.attendee_ids ?? [])],
   createdAt: r.created_at,
 })
 
@@ -314,6 +342,16 @@ export const toFuelLeg = (r: FuelLegRow): FuelLeg => ({
   createdAt: r.created_at,
 })
 
+export const toExpenseSplit = (r: ExpenseSplitRow): ExpenseSplit =>
+  r.kind === 'equal'
+    ? { kind: 'equal', userIds: [...r.user_ids] }
+    : { kind: 'exact', amounts: { ...r.amounts } }
+
+export const fromExpenseSplit = (s: ExpenseSplit): ExpenseSplitRow =>
+  s.kind === 'equal'
+    ? { kind: 'equal', user_ids: [...s.userIds] }
+    : { kind: 'exact', amounts: { ...s.amounts } }
+
 export const toExpense = (r: ExpenseRow): Expense => ({
   id: r.id,
   tripId: r.trip_id,
@@ -324,6 +362,7 @@ export const toExpense = (r: ExpenseRow): Expense => ({
   category: r.category,
   source: r.source,
   sourceId: r.source_id,
+  split: r.split ? toExpenseSplit(r.split) : null,
 })
 
 export const toChannel = (r: ChannelRow): Channel => ({

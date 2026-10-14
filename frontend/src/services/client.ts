@@ -57,6 +57,7 @@ export const api = {
     create: mockIdeas.create,
     update: mockIdeas.update,
     setStatus: mockIdeas.setStatus,
+    setAttending: mockIdeas.setAttending,
     remove: mockIdeas.remove,
   },
   votes: {

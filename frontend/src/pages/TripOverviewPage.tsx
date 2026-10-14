@@ -256,15 +256,15 @@ export function TripOverviewPage() {
             className="mt-5 grid grid-cols-4 border-t border-white/6 pt-1 md:mt-7"
           >
             <Lamp
-              to={`/trips/${tripId}/voting`}
+              to={`/trips/${tripId}/activities?tab=voting`}
               icon={Hand}
               label="Vote"
               count={awaitingMyVote}
               lit={awaitingMyVote > 0}
               description={
                 awaitingMyVote > 0
-                  ? `${plural(awaitingMyVote, 'idea is', 'ideas are')} waiting on your vote. Open voting.`
-                  : 'No ideas waiting on your vote. Open voting.'
+                  ? `${plural(awaitingMyVote, 'idea is', 'ideas are')} waiting on your vote. Open activities.`
+                  : 'No ideas waiting on your vote. Open activities.'
               }
             />
             <Lamp

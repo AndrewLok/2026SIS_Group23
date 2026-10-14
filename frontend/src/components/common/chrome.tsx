@@ -80,6 +80,76 @@ export function CategoryBadge({
   )
 }
 
+/**
+ * A small either-or switch, laid out as one strip. Behaves as a radio group:
+ * arrow keys move the choice, and only the chosen option is a tab stop.
+ */
+export function Segmented<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  className,
+}: {
+  label: string
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (value: T) => void
+  className?: string
+}) {
+  const move = (step: number) => {
+    const index = options.findIndex((o) => o.value === value)
+    const next = options[(index + step + options.length) % options.length]
+    if (next) onChange(next.value)
+  }
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={cn('grid gap-1 rounded-lg border border-bezel p-1', className)}
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+          event.preventDefault()
+          move(1)
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+          event.preventDefault()
+          move(-1)
+        }
+      }}
+    >
+      {options.map((option) => {
+        const selected = option.value === value
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            tabIndex={selected ? 0 : -1}
+            ref={(node) => {
+              // Follow the choice with focus when it moves by keyboard.
+              if (selected && node && node.parentElement?.contains(document.activeElement)) {
+                node.focus()
+              }
+            }}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              'min-h-10 rounded-md px-3 text-sm outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
+              selected
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /** A row of label and value with a hairline rule, as used down a spec panel. */
 export function SpecRow({
   label,

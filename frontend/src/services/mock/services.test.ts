@@ -191,6 +191,7 @@ describe('expenses', () => {
         paidBy: DEMO_USER_ID,
         spentAt: new Date().toISOString(),
         category: 'other',
+        split: null,
       }),
     ).rejects.toBeInstanceOf(ApiError)
   })
@@ -210,6 +211,7 @@ describe('expenses', () => {
       paidBy: DEMO_USER_ID,
       spentAt: new Date().toISOString(),
       category: 'other',
+      split: null,
     })
 
     const after =
@@ -219,5 +221,129 @@ describe('expenses', () => {
 
     // Paid 10000, owes a fifth of it back, so is up by four fifths.
     expect(after - before).toBe(10_000 - splitEvenly(10_000, memberIds.length)[0]!)
+  })
+})
+
+describe('activities', () => {
+  const base = {
+    tripId: TRIP,
+    title: 'Mini golf',
+    description: '',
+    category: 'activity' as const,
+    proposedStart: new Date().toISOString(),
+    proposedEnd: null,
+    allDay: false,
+  }
+
+  it('adds one straight to the plan with the people going, and no vote', async () => {
+    const created = await ideas.create({
+      ...base,
+      needsVote: false,
+      attendeeIds: [DEMO_USER_ID, 'usr-mia'],
+    })
+    expect(created.status).toBe('planned')
+    expect(created.attendeeIds).toEqual([DEMO_USER_ID, 'usr-mia'])
+    const cast = (await votes.listForTrip(TRIP)).filter((v) => v.ideaId === created.id)
+    expect(cast).toHaveLength(0)
+  })
+
+  it('needs a time and at least one person when it skips the vote', async () => {
+    await expect(
+      ideas.create({ ...base, proposedStart: null, needsVote: false, attendeeIds: [DEMO_USER_ID] }),
+    ).rejects.toBeInstanceOf(ApiError)
+    await expect(
+      ideas.create({ ...base, needsVote: false, attendeeIds: [] }),
+    ).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('refuses a vote on something that was never put to one', async () => {
+    const created = await ideas.create({ ...base, needsVote: false, attendeeIds: ['usr-mia'] })
+    await expect(votes.cast(created.id, 1)).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('lets a member say they are in, then out', async () => {
+    const created = await ideas.create({ ...base, needsVote: false, attendeeIds: ['usr-mia'] })
+    expect((await ideas.setAttending(created.id, true)).attendeeIds).toContain(DEMO_USER_ID)
+    expect((await ideas.setAttending(created.id, false)).attendeeIds).not.toContain(DEMO_USER_ID)
+  })
+
+  it('marks everyone who voted for it as going once the vote passes', async () => {
+    // Kayak has Jonas and Ethan for it; the demo user's vote carries it.
+    await votes.cast('idea-kayak', 1)
+    const kayak = (await ideas.list(TRIP)).find((i) => i.id === 'idea-kayak')
+    expect(kayak?.status).toBe('agreed')
+    expect(kayak?.attendeeIds).toEqual(
+      expect.arrayContaining([DEMO_USER_ID, 'usr-jonas', 'usr-ethan']),
+    )
+  })
+
+  it('will not let anyone join while it is still being voted on', async () => {
+    await expect(ideas.setAttending('idea-surf', true)).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('expense splits', () => {
+  const base = {
+    tripId: TRIP,
+    description: 'Dinner',
+    amountCents: 9_000,
+    paidBy: DEMO_USER_ID,
+    spentAt: new Date().toISOString(),
+    category: 'food' as const,
+  }
+
+  /** Everyone's net position, read once, so a test compares two snapshots. */
+  const nets = async () => {
+    const memberIds = (await trips.listMembers(TRIP)).map((m) => m.userId)
+    const legs = await fuel.list(TRIP)
+    const balances = computeBalances(await expenses.list(TRIP), memberIds, legs)
+    return (userId: string) => balances.find((b) => b.userId === userId)?.netCents ?? 0
+  }
+
+  it('splits equally across only the people ticked, the payer included', async () => {
+    const before = await nets()
+    await expenses.create({
+      ...base,
+      split: { kind: 'equal', userIds: [DEMO_USER_ID, 'usr-mia', 'usr-priya'] },
+    })
+    const after = await nets()
+    // Three ways at 3000 each: the payer is owed the other two shares.
+    expect(after(DEMO_USER_ID) - before(DEMO_USER_ID)).toBe(6_000)
+    expect(after('usr-mia') - before('usr-mia')).toBe(-3_000)
+    expect(after('usr-jonas') - before('usr-jonas')).toBe(0)
+  })
+
+  it('charges exact amounts, and the payer keeps what is left', async () => {
+    const before = await nets()
+    await expenses.create({
+      ...base,
+      split: { kind: 'exact', amounts: { 'usr-mia': 2_500, 'usr-ethan': 1_000 } },
+    })
+    const after = await nets()
+    expect(after(DEMO_USER_ID) - before(DEMO_USER_ID)).toBe(3_500)
+    expect(after('usr-mia') - before('usr-mia')).toBe(-2_500)
+    expect(after('usr-ethan') - before('usr-ethan')).toBe(-1_000)
+  })
+
+  it('refuses exact amounts that add up to more than the total', async () => {
+    await expect(
+      expenses.create({ ...base, split: { kind: 'exact', amounts: { 'usr-mia': 9_001 } } }),
+    ).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('refuses an equal split with nobody in it', async () => {
+    await expect(
+      expenses.create({ ...base, split: { kind: 'equal', userIds: [] } }),
+    ).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('refuses to lower the total below what people already owe', async () => {
+    const created = await expenses.create({
+      ...base,
+      split: { kind: 'exact', amounts: { 'usr-mia': 5_000 } },
+    })
+    await expect(expenses.update(created.id, { amountCents: 4_000 })).rejects.toBeInstanceOf(
+      ApiError,
+    )
   })
 })

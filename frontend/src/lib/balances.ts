@@ -7,7 +7,11 @@
  *   2. Net per member is total paid minus total owed.
  *   3. Settlement is a greedy pass, largest creditor against largest debtor.
  *   4. Participants are all trip members, except fuel-sourced expenses, which
- *      use the originating leg's riders.
+ *      use the originating leg's riders, and expenses with their own split.
+ *
+ * An expense's own split is either an equal split across chosen members (rule 1
+ * applies, over those members only) or exact amounts owed to the payer, with
+ * whatever is left of the total landing on the payer as their own share.
  */
 
 import { splitEvenly } from '@/lib/money'
@@ -28,9 +32,13 @@ export type MemberBalance = {
 }
 
 /**
- * Who shares this expense. Everyone, unless it came from a fuel leg, in which
- * case only that leg's riders do. A fuel expense whose leg has been deleted
- * falls back to the whole group rather than vanishing from the ledger.
+ * Who shares this expense evenly. Everyone, unless it came from a fuel leg, in
+ * which case only that leg's riders do, or it names its own equal split. A fuel
+ * expense whose leg has been deleted falls back to the whole group rather than
+ * vanishing from the ledger.
+ *
+ * Not meaningful for an exact split, which is not shared evenly; sharesFor
+ * handles that case before it gets here.
  */
 export function participantsFor(
   expense: Expense,
@@ -42,6 +50,9 @@ export function participantsFor(
     if (leg && leg.riderIds.length > 0) {
       return [...leg.riderIds].sort()
     }
+  }
+  if (expense.source !== 'fuel' && expense.split?.kind === 'equal' && expense.split.userIds.length > 0) {
+    return [...expense.split.userIds].sort()
   }
   return [...memberIds].sort()
 }
@@ -56,13 +67,36 @@ export function sharesFor(
   memberIds: string[],
   fuelLegs: FuelLeg[],
 ): Map<string, number> {
+  const shares = new Map<string, number>()
+
+  if (expense.source !== 'fuel' && expense.split?.kind === 'exact') {
+    let owed = 0
+    for (const id of Object.keys(expense.split.amounts).sort()) {
+      const cents = expense.split.amounts[id] ?? 0
+      if (id === expense.paidBy || cents === 0) continue
+      shares.set(id, cents)
+      owed += cents
+    }
+    // The payer carries whatever nobody else does, which keeps the shares
+    // summing to the total even if the figures were somehow entered wrong.
+    const leftover = expense.amountCents - owed
+    if (leftover !== 0) shares.set(expense.paidBy, leftover)
+    return shares
+  }
+
   const participants = participantsFor(expense, memberIds, fuelLegs)
   const parts = splitEvenly(expense.amountCents, participants.length)
-  const shares = new Map<string, number>()
   participants.forEach((id, index) => {
     shares.set(id, parts[index] ?? 0)
   })
   return shares
+}
+
+/** A few words on how an expense is shared, for the expense log. */
+export function splitSummary(expense: Expense, memberIds: string[], fuelLegs: FuelLeg[]): string {
+  if (expense.source !== 'fuel' && expense.split?.kind === 'exact') return 'exact amounts'
+  const ways = participantsFor(expense, memberIds, fuelLegs).length
+  return ways === 1 ? 'not split' : `split ${ways} ways`
 }
 
 /** One member's share of one expense, or 0 when they are not a participant. */

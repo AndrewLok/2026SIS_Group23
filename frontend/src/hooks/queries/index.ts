@@ -146,6 +146,34 @@ export function useSetIdeaStatus(tripId: string) {
   })
 }
 
+/** "I'm in" and "I'm out", optimistically, for the same reason as voting. */
+export function useSetAttending(
+  tripId: string,
+  userId: string,
+): UseMutationResult<Idea, Error, { ideaId: string; attending: boolean }, { previous?: Idea[] }> {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: ({ ideaId, attending }: { ideaId: string; attending: boolean }) =>
+      api.ideas.setAttending(ideaId, attending),
+    onMutate: async ({ ideaId, attending }) => {
+      await client.cancelQueries({ queryKey: keys.ideas(tripId) })
+      const previous = client.getQueryData<Idea[]>(keys.ideas(tripId))
+      client.setQueryData<Idea[]>(keys.ideas(tripId), (current = []) =>
+        current.map((idea) => {
+          if (idea.id !== ideaId) return idea
+          const others = idea.attendeeIds.filter((id) => id !== userId)
+          return { ...idea, attendeeIds: attending ? [...others, userId] : others }
+        }),
+      )
+      return { previous }
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) client.setQueryData(keys.ideas(tripId), context.previous)
+    },
+    onSettled: () => client.invalidateQueries({ queryKey: keys.ideas(tripId) }),
+  })
+}
+
 export function useRemoveIdea(tripId: string) {
   const client = useQueryClient()
   return useMutation({

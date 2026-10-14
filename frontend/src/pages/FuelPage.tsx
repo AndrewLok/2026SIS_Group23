@@ -332,7 +332,7 @@ export function FuelPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Fuel and travel"
-        subtitle="A leg splits across its riders only, which makes it the one exception to even splits."
+        subtitle="A leg splits evenly across its riders, and the driver is paid back."
         action={
           <AddLegDrawer
             tripId={tripId}
@@ -375,10 +375,10 @@ export function FuelPage() {
         </ul>
       )}
 
-      <Placard className="self-start">Fuel is the exception</Placard>
+      <Placard className="self-start">How fuel splits</Placard>
       <p className="-mt-3 text-xs text-muted-foreground">
-        Every other expense splits across all members. A fuel leg splits across its riders, and
-        shows on the money screen as a read-only row linking back here.
+        A fuel leg splits evenly across its riders and shows on the money screen as a read-only
+        row linking back here. Edit the leg to change who rode.
       </p>
     </div>
   )

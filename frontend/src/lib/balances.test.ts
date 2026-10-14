@@ -18,7 +18,7 @@ describe('seed data', () => {
   it('has the shape the plan specifies', () => {
     expect(seed.profiles).toHaveLength(5)
     expect(memberIds).toHaveLength(5)
-    expect(seed.ideas).toHaveLength(8)
+    expect(seed.ideas).toHaveLength(9)
     expect(expenses).toHaveLength(12)
     expect(fuelLegs).toHaveLength(3)
     expect(seed.bookings).toHaveLength(4)
@@ -45,6 +45,34 @@ describe('sharesFor', () => {
     expect([...shares.values()].reduce((a, b) => a + b, 0)).toBe(fuel.amountCents)
     // 3661 / 3 leaves one cent over, which goes to the earliest id.
     expect([...shares.values()].sort((a, b) => b - a)).toEqual([1_221, 1_220, 1_220])
+  })
+
+  it('splits an equal split across only the members it names', () => {
+    const coffee = expenses.find((e) => e.id === 'exp-coffee')
+    if (!coffee) throw new Error('seed changed')
+    const shares = sharesFor(coffee, memberIds, fuelLegs)
+    expect([...shares.keys()].sort()).toEqual(['usr-ethan', 'usr-lachlan', 'usr-priya'])
+    // 4260 / 3 divides exactly.
+    for (const share of shares.values()) expect(share).toBe(1_420)
+  })
+
+  it('charges exact amounts and leaves the rest with the payer', () => {
+    const deposit = expenses.find((e) => e.id === 'exp-kayak-deposit')
+    if (!deposit) throw new Error('seed changed')
+    const shares = sharesFor(deposit, memberIds, fuelLegs)
+    expect(Object.fromEntries(shares)).toEqual({ 'usr-ethan': 4_000, 'usr-jonas': 4_000 })
+  })
+
+  it('gives the payer nothing when exact amounts cover the whole total', () => {
+    const base = expenses.find((e) => e.id === 'exp-kayak-deposit')
+    if (!base) throw new Error('seed changed')
+    const covered: Expense = {
+      ...base,
+      split: { kind: 'exact', amounts: { 'usr-ethan': 5_000, 'usr-mia': 3_000 } },
+    }
+    const shares = sharesFor(covered, memberIds, fuelLegs)
+    expect(shares.has(covered.paidBy)).toBe(false)
+    expect([...shares.values()].reduce((a, b) => a + b, 0)).toBe(covered.amountCents)
   })
 
   it('never loses or invents a cent on any expense', () => {

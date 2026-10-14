@@ -264,7 +264,7 @@ export function Windscreen({
 
       {/* The next stop, on a roadside guide sign. */}
       <Link
-        to={next ? `/trips/${tripId}/calendar` : `/trips/${tripId}/voting`}
+        to={next ? `/trips/${tripId}/calendar` : `/trips/${tripId}/activities`}
         className="group absolute right-[5%] top-[30%] z-10 flex w-[min(52%,17rem)] flex-col items-stretch md:right-[3%] md:top-[26%]"
       >
         <span className="rounded-md bg-[var(--road-sign)] p-[3px] shadow-[0_6px_18px_-6px_#000] transition-[filter] group-hover:brightness-110">
@@ -282,9 +282,9 @@ export function Windscreen({
               </span>
             ) : (
               <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-sm font-semibold leading-tight">Nothing agreed yet</span>
+                <span className="text-sm font-semibold leading-tight">Nothing planned yet</span>
                 <span className="text-sm leading-tight underline underline-offset-4">
-                  Vote on ideas
+                  Add an activity
                 </span>
               </span>
             )}

@@ -1,11 +1,12 @@
 /*
  * Calendar items are derived, never stored.
  *
- * One selector maps agreed ideas and bookings into a single shape sorted by
- * start time, so the agenda view, the month view and the overview's next-up
- * reading all read the same list and cannot disagree with each other.
+ * One selector maps activities going ahead and bookings into a single shape
+ * sorted by start time, so the agenda view, the month view and the overview's
+ * next-up reading all read the same list and cannot disagree with each other.
  */
 
+import { isOnThePlan } from '@/lib/voting'
 import type { Booking, Idea } from '@/types'
 
 export type CalendarSource = 'idea' | 'flight' | 'stay' | 'car' | 'other'
@@ -27,7 +28,7 @@ export type CalendarItem = {
 
 export function toCalendarItems(ideas: Idea[], bookings: Booking[]): CalendarItem[] {
   const fromIdeas: CalendarItem[] = ideas
-    .filter((idea) => idea.status === 'agreed' && idea.proposedStart !== null)
+    .filter((idea) => isOnThePlan(idea) && idea.proposedStart !== null)
     .map((idea) => ({
       id: `idea:${idea.id}`,
       source: 'idea' as const,
@@ -64,7 +65,7 @@ export function nextUp(items: CalendarItem[], from: Date = new Date()): Calendar
 }
 
 export const sourceLabel: Record<CalendarSource, string> = {
-  idea: 'Agreed',
+  idea: 'Activity',
   flight: 'Flight',
   stay: 'Stay',
   car: 'Car',
@@ -73,7 +74,7 @@ export const sourceLabel: Record<CalendarSource, string> = {
 
 /*
  * Source markers stay inside the panel's own tonal range rather than reaching
- * for a category palette. Radium marks what the group agreed to, because that
+ * for a category palette. Radium marks what the group is doing, because that
  * is a live reading; everything else is a booking someone already made, and
  * those separate by tone. Amber is not used here: it means a figure wanting
  * attention, and a hotel check-in is not that.

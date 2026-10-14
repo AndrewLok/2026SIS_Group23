@@ -119,6 +119,8 @@ function AddBookingDrawer({
           paidBy: values.belongsTo === 'group' ? userId : values.belongsTo,
           spentAt: new Date().toISOString(),
           category: values.type === 'stay' ? 'stay' : 'transport',
+          // A group expense: split evenly across everyone, as it always has been.
+          split: null,
         })
         toast.success('Booking saved and added as a group expense.')
       } else {

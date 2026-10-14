@@ -6,7 +6,9 @@ import { z } from 'zod'
 import { Fuel, Loader2, Plus, Receipt, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
   AlertDialog,
@@ -38,7 +40,7 @@ import {
 } from '@/components/ui/drawer'
 import { Field } from '@/components/common/Field'
 import { MoneyInput } from '@/components/common/money'
-import { CategoryBadge, PageHeader, Placard } from '@/components/common/chrome'
+import { CategoryBadge, PageHeader, Placard, Segmented } from '@/components/common/chrome'
 import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import {
   useBookings,
@@ -55,13 +57,15 @@ import {
   computeBalances,
   settle,
   shareForMember,
+  splitSummary,
   totalSpent,
   transfersInvolving,
 } from '@/lib/balances'
 import { estimateTrip, spendProgress } from '@/lib/estimate'
 import { dayKey, formatDay, isUnderway } from '@/lib/dates'
 import { formatMoney, splitEvenly } from '@/lib/money'
-import type { Expense, ExpenseCategory, Profile } from '@/types'
+import { cn } from '@/lib/utils'
+import type { Expense, ExpenseCategory, ExpenseSplit, Profile } from '@/types'
 
 const categories: ExpenseCategory[] = ['food', 'transport', 'tickets', 'stay', 'other']
 
@@ -71,6 +75,8 @@ const expenseSchema = z.object({
   paidBy: z.string().min(1),
   spentAt: z.string().min(1, 'Pick a date.'),
 })
+
+type SplitMode = 'equal' | 'exact'
 
 function AddExpenseDrawer({
   tripId,
@@ -84,6 +90,11 @@ function AddExpenseDrawer({
   const [open, setOpen] = React.useState(false)
   const [amountCents, setAmountCents] = React.useState<number | null>(null)
   const [amountError, setAmountError] = React.useState<string | null>(null)
+  const [mode, setMode] = React.useState<SplitMode>('equal')
+  const everyone = React.useMemo(() => members.map((m) => m.id), [members])
+  const [sharerIds, setSharerIds] = React.useState<string[]>(everyone)
+  const [owed, setOwed] = React.useState<Record<string, number | null>>({})
+  const [splitError, setSplitError] = React.useState<string | null>(null)
   const create = useCreateExpense(tripId)
 
   const form = useForm<z.infer<typeof expenseSchema>>({
@@ -96,12 +107,72 @@ function AddExpenseDrawer({
     },
   })
 
-  // The live per-head figure, so nobody has to do the division in their head.
-  const perHead = amountCents === null ? null : (splitEvenly(amountCents, members.length)[0] ?? 0)
+  const paidBy = form.watch('paidBy')
+  const payerIsYou = paidBy === userId
+  const payerName = payerIsYou
+    ? 'you'
+    : (members.find((m) => m.id === paidBy)?.displayName ?? 'the payer')
+  const total = amountCents ?? 0
+
+  /*
+   * Live figures, so nobody has to do the division in their head. The equal
+   * parts are worked out in the same sorted order the ledger uses, so the cent
+   * shown beside each name is the cent that person is actually charged.
+   */
+  const sortedSharers = [...sharerIds].sort()
+  const parts = splitEvenly(total, sortedSharers.length)
+  const equalShare = new Map(sortedSharers.map((id, i) => [id, parts[i] ?? 0]))
+  const owers = members.filter((m) => m.id !== paidBy)
+  const owedTotal = owers.reduce((sum, m) => sum + (owed[m.id] ?? 0), 0)
+  const owedToPayer =
+    mode === 'equal' ? total - (equalShare.get(paidBy) ?? 0) : Math.min(owedTotal, total)
+  const leftover = total - owedTotal
+
+  const toggleSharer = (id: string) => {
+    setSplitError(null)
+    setSharerIds((current) =>
+      current.includes(id) ? current.filter((s) => s !== id) : [...current, id],
+    )
+  }
+
+  const startOver = () => {
+    form.reset()
+    setAmountCents(null)
+    setAmountError(null)
+    setMode('equal')
+    setSharerIds(everyone)
+    setOwed({})
+    setSplitError(null)
+  }
+
+  /** The split to send, or an error to show instead. */
+  const buildSplit = (): ExpenseSplit | string => {
+    if (mode === 'equal') {
+      if (sharerIds.length === 0) return 'Pick at least one person to split it with.'
+      return { kind: 'equal', userIds: sharerIds }
+    }
+    const amounts: Record<string, number> = {}
+    for (const m of owers) {
+      const cents = owed[m.id]
+      if (cents === undefined || cents === null || cents === 0) continue
+      if (cents < 0) return 'Amounts owed cannot be negative.'
+      amounts[m.id] = cents
+    }
+    if (Object.keys(amounts).length === 0) return 'Enter what at least one person owes.'
+    if (owedTotal > total) {
+      return `That is ${formatMoney(owedTotal - total)} more than the total.`
+    }
+    return { kind: 'exact', amounts }
+  }
 
   const submit = form.handleSubmit(async (values) => {
     if (amountCents === null || amountCents <= 0) {
       setAmountError('Enter an amount above zero.')
+      return
+    }
+    const split = buildSplit()
+    if (typeof split === 'string') {
+      setSplitError(split)
       return
     }
     try {
@@ -111,12 +182,11 @@ function AddExpenseDrawer({
         paidBy: values.paidBy,
         spentAt: new Date(values.spentAt).toISOString(),
         category: values.category,
+        split,
       })
       toast.success('Expense added. Balances updated.')
       setOpen(false)
-      form.reset()
-      setAmountCents(null)
-      setAmountError(null)
+      startOver()
     } catch {
       toast.error('Could not add that expense.')
     }
@@ -131,11 +201,11 @@ function AddExpenseDrawer({
         </Button>
       </DrawerTrigger>
       <DrawerContent>
-        <div className="mx-auto w-full max-w-md">
+        <div className="mx-auto w-full max-w-md overflow-y-auto">
           <DrawerHeader>
             <DrawerTitle>Add an expense</DrawerTitle>
             <DrawerDescription>
-              Splits evenly across all {members.length} members. Fuel legs are the one exception.
+              Choose who owes for it. Split it equally, or say exactly what each person owes.
             </DrawerDescription>
           </DrawerHeader>
           <form onSubmit={submit} className="flex flex-col gap-5 px-4" noValidate>
@@ -151,26 +221,130 @@ function AddExpenseDrawer({
               )}
             </Field>
 
-            <Field label="Amount" error={amountError ?? undefined} required>
-              {({ id, describedBy, invalid }) => (
-                <MoneyInput
-                  id={id}
-                  valueCents={amountCents}
-                  onChangeCents={(c) => {
-                    setAmountCents(c)
-                    setAmountError(null)
-                  }}
-                  aria-describedby={describedBy}
-                  aria-invalid={invalid}
-                />
-              )}
-            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Amount" error={amountError ?? undefined} required>
+                {({ id, describedBy, invalid }) => (
+                  <MoneyInput
+                    id={id}
+                    valueCents={amountCents}
+                    onChangeCents={(c) => {
+                      setAmountCents(c)
+                      setAmountError(null)
+                      setSplitError(null)
+                    }}
+                    aria-describedby={describedBy}
+                    aria-invalid={invalid}
+                  />
+                )}
+              </Field>
+              <Field label="Who paid">
+                {({ id }) => (
+                  <Select
+                    value={paidBy}
+                    onValueChange={(v) => {
+                      form.setValue('paidBy', v)
+                      setSplitError(null)
+                    }}
+                  >
+                    <SelectTrigger id={id}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {members.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.displayName}
+                          {m.id === userId ? ' (you)' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </Field>
+            </div>
 
-            {perHead !== null && perHead > 0 ? (
-              <p className="tabular -mt-2 text-sm text-radium">
-                {formatMoney(perHead)} each across {members.length} members
-              </p>
-            ) : null}
+            <fieldset className="flex flex-col gap-3">
+              <legend className="placard caption mb-3">
+                {mode === 'equal' ? 'Who is sharing it' : `Who owes ${payerName}`}
+              </legend>
+              <Segmented
+                label="How to split it"
+                value={mode}
+                onChange={(next) => {
+                  setMode(next)
+                  setSplitError(null)
+                }}
+                options={[
+                  { value: 'equal', label: 'Equally' },
+                  { value: 'exact', label: 'Exact amounts' },
+                ]}
+              />
+
+              {mode === 'equal' ? (
+                <ul className="flex flex-col gap-1">
+                  {members.map((m) => {
+                    const ticked = sharerIds.includes(m.id)
+                    return (
+                      <li key={m.id} className="flex min-h-9 items-center gap-3">
+                        <Checkbox
+                          id={`sharer-${m.id}`}
+                          checked={ticked}
+                          onCheckedChange={() => toggleSharer(m.id)}
+                        />
+                        <Label htmlFor={`sharer-${m.id}`} className="flex-1 text-sm font-normal">
+                          {m.displayName}
+                          {m.id === userId ? ' (you)' : ''}
+                        </Label>
+                        {ticked && total > 0 ? (
+                          <span className="tabular text-sm text-muted-foreground">
+                            {formatMoney(equalShare.get(m.id) ?? 0)}
+                          </span>
+                        ) : null}
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {owers.map((m) => (
+                    <li key={m.id} className="flex items-center gap-3">
+                      <Label htmlFor={`owed-${m.id}`} className="flex-1 text-sm font-normal">
+                        {m.displayName}
+                        {m.id === userId ? ' (you)' : ''}
+                      </Label>
+                      <MoneyInput
+                        id={`owed-${m.id}`}
+                        className="w-32"
+                        valueCents={owed[m.id] ?? null}
+                        onChangeCents={(c) => {
+                          setOwed((current) => ({ ...current, [m.id]: c }))
+                          setSplitError(null)
+                        }}
+                      />
+                    </li>
+                  ))}
+                  <li className="flex items-center justify-between gap-3 border-t border-bezel pt-2 text-sm">
+                    <span className="text-muted-foreground">
+                      {payerIsYou ? 'Your share' : `${payerName}'s share`}, what is left
+                    </span>
+                    <span
+                      className={cn('tabular', leftover < 0 ? 'text-caution' : 'text-foreground')}
+                    >
+                      {formatMoney(leftover)}
+                    </span>
+                  </li>
+                </ul>
+              )}
+
+              {splitError ? (
+                <p role="alert" className="text-xs text-caution">
+                  {splitError}
+                </p>
+              ) : total > 0 && owedToPayer > 0 ? (
+                <p className="tabular text-sm text-radium">
+                  {payerIsYou ? 'You are' : `${payerName} is`} owed {formatMoney(owedToPayer)}
+                </p>
+              ) : null}
+            </fieldset>
 
             <div className="grid grid-cols-2 gap-4">
               <Field label="Category">
@@ -197,27 +371,6 @@ function AddExpenseDrawer({
               </Field>
             </div>
 
-            <Field label="Who paid">
-              {({ id }) => (
-                <Select
-                  value={form.watch('paidBy')}
-                  onValueChange={(v) => form.setValue('paidBy', v)}
-                >
-                  <SelectTrigger id={id}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {members.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.displayName}
-                        {m.id === userId ? ' (you)' : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </Field>
-
             <DrawerFooter className="px-0">
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? (
@@ -226,7 +379,7 @@ function AddExpenseDrawer({
                 Add expense
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Even splits only. Voyager does not move any money.
+                Voyager does not move any money.
               </p>
             </DrawerFooter>
           </form>
@@ -274,6 +427,7 @@ function ExpenseRow({
         <p className="mt-1 text-xs text-muted-foreground">
           {payer?.displayName ?? 'Someone'}
           {expense.paidBy === userId ? ' (you)' : ''} paid
+          {` · ${splitSummary(expense, memberIds, fuelLegs)}`}
           {myShare > 0 ? ` · your share ${formatMoney(myShare)}` : ' · not your split'}
         </p>
         {fromFuel ? (

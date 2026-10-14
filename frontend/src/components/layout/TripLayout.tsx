@@ -7,13 +7,13 @@ import { NavLink, Outlet, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
   CalendarDays,
+  Compass,
   Gauge,
   LogOut,
   MessageSquare,
   MoreVertical,
   Plane,
   Users,
-  Vote,
   Wallet,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { to: '', label: 'Panel', icon: Gauge, end: true },
-  { to: 'voting', label: 'Voting', icon: Vote, end: false },
+  { to: 'activities', label: 'Activities', icon: Compass, end: false },
   { to: 'calendar', label: 'Calendar', icon: CalendarDays, end: false },
   { to: 'expenses', label: 'Money', icon: Wallet, end: false },
   { to: 'chat', label: 'Chat', icon: MessageSquare, end: false },
