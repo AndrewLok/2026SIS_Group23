@@ -74,3 +74,16 @@ export function isUnderway(startIso: string | null, endIso: string | null): bool
   if (!endIso) return true
   return today <= startOfDay(parseISO(endIso))
 }
+
+/** "Fri 14 Mar, 09:00-11:00", or both ends in full when it runs past midnight. */
+export function formatDayTimeRange(startIso: string, endIso: string | null): string {
+  if (!endIso) return formatDayTime(startIso)
+  if (isSameDay(parseISO(startIso), parseISO(endIso))) {
+    return `${formatDayTime(startIso)}-${formatTime(endIso)}`
+  }
+  return `${formatDayTime(startIso)} - ${formatDayTime(endIso)}`
+}
+
+/** The value a datetime-local input expects, in local time. Empty for null. */
+export const toLocalInput = (value: string | Date | null): string =>
+  value ? format(typeof value === 'string' ? parseISO(value) : value, "yyyy-MM-dd'T'HH:mm") : ''

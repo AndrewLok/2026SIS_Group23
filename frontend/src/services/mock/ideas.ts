@@ -34,6 +34,7 @@ export async function create(input: NewIdea): Promise<Idea> {
   if (!input.needsVote && !input.proposedStart) {
     throw new ApiError('invalid', 'Pick a date and time.')
   }
+  assertTimes(input.proposedStart, input.proposedEnd)
   const memberIds = new Set(
     read()
       .tripMembers.filter((m) => m.trip_id === input.tripId)
@@ -77,8 +78,22 @@ export async function create(input: NewIdea): Promise<Idea> {
   return toIdea(row)
 }
 
+/** An end, when there is one, has to come after the start. */
+function assertTimes(start: string | null, end: string | null): void {
+  if (end && !start) throw new ApiError('invalid', 'Pick when it starts too.')
+  if (start && end && Date.parse(end) <= Date.parse(start)) {
+    throw new ApiError('invalid', 'It has to finish after it starts.')
+  }
+}
+
 export async function update(ideaId: string, patch: Partial<Idea>): Promise<Idea> {
   await latency()
+  const existing = read().ideas.find((i) => i.id === ideaId)
+  if (!existing) throw new ApiError('not_found', 'That activity has been deleted.')
+  assertTimes(
+    patch.proposedStart !== undefined ? patch.proposedStart : existing.proposed_start,
+    patch.proposedEnd !== undefined ? patch.proposedEnd : existing.proposed_end,
+  )
   const row = write((draft) => {
     const idea = draft.ideas.find((i) => i.id === ideaId)
     if (!idea) throw new ApiError('not_found', 'That activity has been deleted.')

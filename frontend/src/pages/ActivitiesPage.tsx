@@ -1,9 +1,7 @@
 import * as React from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import {
+  CalendarClock,
   CalendarPlus,
   Check,
   Compass,
@@ -16,77 +14,162 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Field } from '@/components/common/Field'
-import { CategoryBadge, PageHeader, Placard, Segmented } from '@/components/common/chrome'
+import { CategoryBadge, PageHeader, Placard } from '@/components/common/chrome'
 import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import { MemberAvatar } from '@/components/common/people'
+import { AddActivityDrawer } from '@/components/activities/AddActivityDrawer'
 import {
   useCastVote,
-  useCreateIdea,
   useIdeas,
   useMembers,
   useRemoveIdea,
   useSetAttending,
+  useUpdateIdea,
   useVotes,
 } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
 import { agreeThreshold, isOnThePlan, needsADate, tally } from '@/lib/voting'
-import { formatDayTime } from '@/lib/dates'
-import type { Idea, IdeaCategory, Profile, Vote } from '@/types'
-
-const categories: IdeaCategory[] = ['activity', 'food', 'stay', 'travel']
+import { blankPreset, endOf, overlaps } from '@/lib/schedule'
+import { dayKey, formatDay, formatDayTimeRange, toLocalInput } from '@/lib/dates'
+import type { Idea, Profile, Vote } from '@/types'
 
 const tabs = ['plan', 'voting', 'ruled-out'] as const
 type Tab = (typeof tabs)[number]
 
-const activitySchema = z.object({
-  title: z.string().min(1, 'Give the activity a title.'),
-  description: z.string(),
-  category: z.enum(['activity', 'food', 'stay', 'travel']),
-  proposedStart: z.string(),
-})
+const spanOf = (idea: Idea) =>
+  idea.proposedStart
+    ? { start: Date.parse(idea.proposedStart), end: endOf(idea.proposedStart, idea.proposedEnd) }
+    : null
 
+/** Who is in on something, by name, so nobody has to hover an avatar to find out. */
 function PeopleList({
   ids,
   profiles,
   label,
+  empty,
 }: {
   ids: string[]
   profiles: Map<string, Profile>
   label: string
+  /** Shown when nobody is listed; omit to hide the row instead. */
+  empty?: string
 }) {
-  if (ids.length === 0) return null
+  if (ids.length === 0 && !empty) return null
   return (
-    <div className="flex items-center gap-2">
-      <span className="placard caption">{label}</span>
-      <span className="flex flex-wrap items-center gap-1">
-        {ids.map((id) => {
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+      <span className="placard caption w-14 shrink-0">{label}</span>
+      {ids.length === 0 ? (
+        <span className="text-xs text-placard">{empty}</span>
+      ) : (
+        ids.map((id) => {
           const profile = profiles.get(id)
-          return profile ? <MemberAvatar key={id} profile={profile} size={22} /> : null
-        })}
-      </span>
+          if (!profile) return null
+          return (
+            <span
+              key={id}
+              className="inline-flex items-center gap-1.5 rounded-full border border-bezel py-0.5 pr-2 pl-0.5 text-xs"
+            >
+              <MemberAvatar profile={profile} size={18} />
+              {profile.displayName.split(' ')[0]}
+            </span>
+          )
+        })
+      )}
     </div>
+  )
+}
+
+/** Set or move when something happens, from right where it is listed. */
+function DateButton({ idea, tripId }: { idea: Idea; tripId: string }) {
+  const update = useUpdateIdea(tripId)
+  const [open, setOpen] = React.useState(false)
+  const [start, setStart] = React.useState('')
+  const [end, setEnd] = React.useState('')
+  const [error, setError] = React.useState<string | null>(null)
+
+  const onOpenChange = (next: boolean) => {
+    if (next) {
+      setStart(toLocalInput(idea.proposedStart))
+      setEnd(toLocalInput(idea.proposedEnd))
+      setError(null)
+    }
+    setOpen(next)
+  }
+
+  const save = async () => {
+    if (!start) return setError('Pick a date and time.')
+    if (end && end <= start) return setError('It has to finish after it starts.')
+    try {
+      await update.mutateAsync({
+        ideaId: idea.id,
+        patch: {
+          proposedStart: new Date(start).toISOString(),
+          proposedEnd: end ? new Date(end).toISOString() : null,
+        },
+      })
+      toast.success(idea.proposedStart ? 'Date changed' : 'Date added')
+      setOpen(false)
+    } catch {
+      toast.error('Could not save that date.')
+    }
+  }
+
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="min-h-9">
+          {idea.proposedStart ? (
+            <CalendarClock size={14} aria-hidden="true" />
+          ) : (
+            <CalendarPlus size={14} aria-hidden="true" />
+          )}
+          {idea.proposedStart ? 'Change date' : 'Add date'}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="flex w-72 flex-col gap-3">
+        <p className="text-sm font-medium">{idea.title}</p>
+        <Field label="Starts" required error={error ?? undefined}>
+          {({ id, describedBy, invalid }) => (
+            <Input
+              id={id}
+              type="datetime-local"
+              value={start}
+              aria-describedby={describedBy}
+              aria-invalid={invalid}
+              onChange={(e) => {
+                setStart(e.target.value)
+                setError(null)
+              }}
+            />
+          )}
+        </Field>
+        <Field label="Finishes" hint="Optional. Without it, it shows as an hour.">
+          {({ id, describedBy }) => (
+            <Input
+              id={id}
+              type="datetime-local"
+              value={end}
+              min={start || undefined}
+              aria-describedby={describedBy}
+              onChange={(e) => {
+                setEnd(e.target.value)
+                setError(null)
+              }}
+            />
+          )}
+        </Field>
+        <Button onClick={save} disabled={update.isPending}>
+          {update.isPending ? (
+            <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+          ) : null}
+          Save date
+        </Button>
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -122,6 +205,23 @@ function ActivityHeading({ idea }: { idea: Idea }) {
   )
 }
 
+/** When it is, and the button to set or move it. */
+function WhenRow({ idea, tripId, children }: { idea: Idea; tripId: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+      {idea.proposedStart ? (
+        <span className="tabular text-foreground">
+          {formatDayTimeRange(idea.proposedStart, idea.proposedEnd)}
+        </span>
+      ) : (
+        <span className="text-placard">No date yet</span>
+      )}
+      <DateButton idea={idea} tripId={tripId} />
+      {children}
+    </div>
+  )
+}
+
 /** Something going ahead: who is in, and a way to say you are in or out. */
 function PlanRow({
   idea,
@@ -146,22 +246,17 @@ function PlanRow({
     )
 
   return (
-    <li className="plate flex flex-col gap-3 p-4">
+    <li id={`activity-${idea.id}`} className="plate flex scroll-mt-24 flex-col gap-3 p-4">
       <ActivityHeading idea={idea} />
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-        {idea.proposedStart ? (
-          <span className="tabular text-foreground">{formatDayTime(idea.proposedStart)}</span>
-        ) : (
-          <span className="text-placard">No date yet</span>
-        )}
+      <WhenRow idea={idea} tripId={tripId}>
         <span>
           {idea.status === 'agreed' ? 'Voted in' : 'Added'} by{' '}
           {idea.proposedBy === userId ? 'you' : (creator?.displayName ?? 'a member')}
         </span>
-      </div>
+      </WhenRow>
 
-      <PeopleList ids={idea.attendeeIds} profiles={profiles} label="Going" />
+      <PeopleList ids={idea.attendeeIds} profiles={profiles} label="Going" empty="Nobody yet" />
 
       <div className="flex items-center justify-between gap-3 border-t border-bezel pt-3">
         <span className="tabular text-xs text-muted-foreground">
@@ -191,22 +286,24 @@ function PlanRow({
   )
 }
 
-/** Something still being decided, or ruled out: the vote is the whole story. */
-function VoteRow({
+type VoteProps = {
+  votes: Vote[]
+  profiles: Map<string, Profile>
+  memberCount: number
+  userId: string
+  tripId: string
+}
+
+/** One option still being decided, or ruled out: who is in, who is out, and the vote. */
+function VoteCard({
   idea,
   votes,
   profiles,
   memberCount,
   userId,
   tripId,
-}: {
-  idea: Idea
-  votes: Vote[]
-  profiles: Map<string, Profile>
-  memberCount: number
-  userId: string
-  tripId: string
-}) {
+  clashesWith = [],
+}: VoteProps & { idea: Idea; clashesWith?: Idea[] }) {
   const cast = useCastVote(tripId, userId)
   const t = tally(votes, idea.id, userId)
   const threshold = agreeThreshold(memberCount)
@@ -218,24 +315,28 @@ function VoteRow({
   }
 
   return (
-    <li className="plate flex flex-col gap-3 p-4">
+    <li
+      id={`activity-${idea.id}`}
+      className="plate flex min-w-0 scroll-mt-24 list-none flex-col gap-3 p-4"
+    >
       <ActivityHeading idea={idea} />
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-        <span>Proposed by {proposer?.displayName ?? 'a member'}</span>
-        {idea.proposedStart ? (
-          <span className="tabular">{formatDayTime(idea.proposedStart)}</span>
-        ) : (
-          <span className="text-placard">No date yet</span>
-        )}
+      <WhenRow idea={idea} tripId={tripId}>
+        <span>Proposed by {idea.proposedBy === userId ? 'you' : (proposer?.displayName ?? 'a member')}</span>
+      </WhenRow>
+
+      {clashesWith.length > 0 ? (
+        <Placard className="self-start border-caution/40 text-caution">
+          Same time as {clashesWith.map((c) => c.title).join(', ')}
+        </Placard>
+      ) : null}
+
+      <div className="flex flex-col gap-2">
+        <PeopleList ids={t.agreeIds} profiles={profiles} label="In" empty="Nobody yet" />
+        <PeopleList ids={t.disagreeIds} profiles={profiles} label="Out" />
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <PeopleList ids={t.agreeIds} profiles={profiles} label="For" />
-        <PeopleList ids={t.disagreeIds} profiles={profiles} label="Against" />
-      </div>
-
-      <div className="flex items-center justify-between gap-3 border-t border-bezel pt-3">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-bezel pt-3">
         <span className="tabular text-xs text-muted-foreground">
           {t.agree} of {threshold} needed
         </span>
@@ -269,213 +370,121 @@ function VoteRow({
   )
 }
 
-type Mode = 'plan' | 'vote'
-
-function AddActivityDrawer({
-  tripId,
+/**
+ * For one day with several options, each member against the option they are in
+ * for, so "who is doing what" is a read rather than a cross-reference.
+ */
+function WhoIsDoingWhat({
+  options,
+  votes,
   members,
-  userId,
 }: {
-  tripId: string
+  options: Idea[]
+  votes: Vote[]
   members: Profile[]
-  userId: string
 }) {
-  const [open, setOpen] = React.useState(false)
-  const [mode, setMode] = React.useState<Mode>('plan')
-  const everyone = React.useMemo(() => members.map((m) => m.id), [members])
-  const [attendeeIds, setAttendeeIds] = React.useState<string[]>(everyone)
-  const [attendeeError, setAttendeeError] = React.useState<string | null>(null)
-  const create = useCreateIdea(tripId)
+  return (
+    <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+      {members.map((member) => {
+        const inFor = options.filter((o) =>
+          votes.some((v) => v.ideaId === o.id && v.userId === member.id && v.value === 1),
+        )
+        return (
+          <li key={member.id} className="flex min-w-0 items-center gap-2 text-xs">
+            <MemberAvatar profile={member} size={18} />
+            <span className="w-16 shrink-0 truncate">{member.displayName.split(' ')[0]}</span>
+            <span
+              className={`truncate ${inFor.length === 0 ? 'text-placard' : 'text-foreground'}`}
+            >
+              {inFor.length === 0 ? 'Not in for any yet' : inFor.map((o) => o.title).join(' / ')}
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
 
-  const form = useForm<z.infer<typeof activitySchema>>({
-    resolver: zodResolver(activitySchema),
-    defaultValues: { title: '', description: '', category: 'activity', proposedStart: '' },
-  })
-
-  const toggleAttendee = (id: string) => {
-    setAttendeeError(null)
-    setAttendeeIds((current) =>
-      current.includes(id) ? current.filter((a) => a !== id) : [...current, id],
-    )
+/**
+ * Open votes, grouped by day. Options on the same day sit side by side, so it
+ * is plain that two people want one thing and three want another.
+ */
+function VotingBoard({
+  ideas,
+  members,
+  ...voteProps
+}: VoteProps & { ideas: Idea[]; members: Profile[] }) {
+  const byDay = new Map<string, Idea[]>()
+  const undated: Idea[] = []
+  for (const idea of [...ideas].sort((a, b) =>
+    (a.proposedStart ?? '').localeCompare(b.proposedStart ?? ''),
+  )) {
+    if (!idea.proposedStart) undated.push(idea)
+    else {
+      const key = dayKey(idea.proposedStart)
+      byDay.set(key, [...(byDay.get(key) ?? []), idea])
+    }
   }
 
-  const startOver = () => {
-    form.reset()
-    setMode('plan')
-    setAttendeeIds(everyone)
-    setAttendeeError(null)
+  const clashesFor = (idea: Idea, sameDay: Idea[]) => {
+    const span = spanOf(idea)
+    if (!span) return []
+    return sameDay.filter((other) => {
+      const o = spanOf(other)
+      return other.id !== idea.id && o !== null && overlaps(span, o)
+    })
   }
-
-  const submit = form.handleSubmit(async (values) => {
-    const needsVote = mode === 'vote'
-    // Skipping the vote means there is nothing left to decide, so it needs a
-    // time and some people now.
-    let blocked = false
-    if (!needsVote && !values.proposedStart) {
-      form.setError('proposedStart', { message: 'Pick a date and time.' })
-      blocked = true
-    }
-    if (!needsVote && attendeeIds.length === 0) {
-      setAttendeeError('Pick at least one person who is going.')
-      blocked = true
-    }
-    if (blocked) return
-
-    try {
-      await create.mutateAsync({
-        title: values.title,
-        description: values.description,
-        category: values.category,
-        proposedStart: values.proposedStart ? new Date(values.proposedStart).toISOString() : null,
-        proposedEnd: null,
-        allDay: false,
-        needsVote,
-        attendeeIds: needsVote ? [] : attendeeIds,
-      })
-      toast.success(
-        needsVote ? 'Put to a vote. You have already agreed with it.' : 'Added to the plan.',
-      )
-      setOpen(false)
-      startOver()
-    } catch {
-      toast.error('Could not add that activity.')
-    }
-  })
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-        <Button className="min-h-11">
-          <Plus size={16} aria-hidden="true" />
-          Add activity
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent>
-        <div className="mx-auto w-full max-w-md overflow-y-auto">
-          <DrawerHeader>
-            <DrawerTitle>Add an activity</DrawerTitle>
-            <DrawerDescription>
-              {mode === 'plan'
-                ? 'It goes straight on the plan and the calendar. No vote needed.'
-                : 'It goes to the group to vote on. You count as agreeing with it.'}
-            </DrawerDescription>
-          </DrawerHeader>
-          <form onSubmit={submit} className="flex flex-col gap-5 px-4" noValidate>
-            <Segmented
-              label="How it gets decided"
-              value={mode}
-              onChange={(next) => {
-                setMode(next)
-                form.clearErrors('proposedStart')
-                setAttendeeError(null)
-              }}
-              options={[
-                { value: 'plan', label: 'Just add it' },
-                { value: 'vote', label: 'Put it to a vote' },
-              ]}
-            />
+    <div className="flex flex-col gap-8">
+      {[...byDay.entries()].map(([key, options]) => (
+        <section key={key} className="flex flex-col gap-3">
+          <div className="flex items-baseline gap-3">
+            <h2 className="placard text-xs">{formatDay(options[0]!.proposedStart!)}</h2>
+            <span className="text-xs text-muted-foreground">
+              {options.length === 1 ? '1 option' : `${options.length} options`}
+            </span>
+            <span className="h-px flex-1 bg-bezel" aria-hidden="true" />
+          </div>
+          <ul
+            className="relative grid gap-3 overflow-x-auto pb-1"
+            style={{ gridAutoFlow: 'column', gridAutoColumns: 'minmax(17rem, 1fr)' }}
+          >
+            {options.map((idea) => (
+              <VoteCard
+                key={idea.id}
+                idea={idea}
+                clashesWith={clashesFor(idea, options)}
+                {...voteProps}
+              />
+            ))}
+          </ul>
+          {options.length > 1 ? (
+            <div className="rounded-md border border-bezel p-3">
+              <p className="placard caption mb-2">Who is doing what</p>
+              <WhoIsDoingWhat options={options} votes={voteProps.votes} members={members} />
+            </div>
+          ) : null}
+        </section>
+      ))}
 
-            <Field label="What is it" error={form.formState.errors.title?.message} required>
-              {({ id, describedBy, invalid }) => (
-                <Input
-                  id={id}
-                  placeholder="Kayak out to the seal colony"
-                  aria-describedby={describedBy}
-                  aria-invalid={invalid}
-                  {...form.register('title')}
-                />
-              )}
-            </Field>
-            <Field label="Anything the group should know">
-              {({ id }) => (
-                <Textarea
-                  id={id}
-                  rows={3}
-                  placeholder="Two hours from Marengo. Needs at least four people to book."
-                  {...form.register('description')}
-                />
-              )}
-            </Field>
-            <Field label="Category">
-              {({ id }) => (
-                <Select
-                  value={form.watch('category')}
-                  onValueChange={(v) => form.setValue('category', v as IdeaCategory)}
-                >
-                  <SelectTrigger id={id}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </Field>
-            <Field
-              label="When"
-              required={mode === 'plan'}
-              error={form.formState.errors.proposedStart?.message}
-              hint={
-                mode === 'vote'
-                  ? 'Optional. If it is voted in without a date, it cannot go on the calendar yet.'
-                  : undefined
-              }
-            >
-              {({ id, describedBy, invalid }) => (
-                <Input
-                  id={id}
-                  type="datetime-local"
-                  aria-describedby={describedBy}
-                  aria-invalid={invalid}
-                  {...form.register('proposedStart')}
-                />
-              )}
-            </Field>
-
-            {mode === 'plan' ? (
-              <fieldset className="flex flex-col gap-3">
-                <legend className="placard caption mb-3">Who is going</legend>
-                {members.map((m) => (
-                  <div key={m.id} className="flex items-center gap-3">
-                    <Checkbox
-                      id={`attendee-${m.id}`}
-                      checked={attendeeIds.includes(m.id)}
-                      onCheckedChange={() => toggleAttendee(m.id)}
-                    />
-                    <Label htmlFor={`attendee-${m.id}`} className="text-sm font-normal">
-                      {m.displayName}
-                      {m.id === userId ? ' (you)' : ''}
-                    </Label>
-                  </div>
-                ))}
-                {attendeeError ? (
-                  <p role="alert" className="text-xs text-caution">
-                    {attendeeError}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Anyone can say they are in or out later.
-                  </p>
-                )}
-              </fieldset>
-            ) : null}
-
-            <DrawerFooter className="px-0">
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? (
-                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
-                ) : null}
-                {mode === 'plan' ? 'Add to the plan' : 'Put it to a vote'}
-              </Button>
-            </DrawerFooter>
-          </form>
-        </div>
-      </DrawerContent>
-    </Drawer>
+      {undated.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <Placard className="border-caution/40 text-caution">
+              <CalendarPlus size={12} className="mr-1.5" aria-hidden="true" />
+              No date yet
+            </Placard>
+            <span className="h-px flex-1 bg-bezel" aria-hidden="true" />
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {undated.map((idea) => (
+              <VoteCard key={idea.id} idea={idea} {...voteProps} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
   )
 }
 
@@ -488,9 +497,15 @@ export function ActivitiesPage() {
   const ideas = useIdeas(tripId)
   const votes = useVotes(tripId)
   const members = useMembers(tripId)
+  const [drawerOpen, setDrawerOpen] = React.useState(false)
 
   const profiles = React.useMemo(
     () => new Map((members.data ?? []).map((m) => [m.userId, m.profile])),
+    [members.data],
+  )
+  // Stable between renders, so the drawer does not reset while someone types.
+  const memberProfiles = React.useMemo(
+    () => (members.data ?? []).map((m) => m.profile),
     [members.data],
   )
 
@@ -500,9 +515,17 @@ export function ActivitiesPage() {
   const setTab = (next: string) =>
     setParams(next === 'plan' ? {} : { tab: next }, { replace: true })
 
-  if (ideas.isPending || votes.isPending || members.isPending) {
-    return <ListSkeleton rows={4} />
-  }
+  // The calendar links to one activity with ?focus=<id>; bring its card into view.
+  const focus = params.get('focus')
+  const loaded = !ideas.isPending && !votes.isPending && !members.isPending
+  React.useEffect(() => {
+    if (!focus || !loaded) return
+    document
+      .getElementById(`activity-${focus}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [focus, loaded])
+
+  if (!loaded) return <ListSkeleton rows={4} />
 
   // A failed load must say so rather than falling through to an empty state.
   const queries = [ideas, votes, members]
@@ -510,7 +533,6 @@ export function ActivitiesPage() {
 
   const all = ideas.data ?? []
   const allVotes = votes.data ?? []
-  const memberProfiles = (members.data ?? []).map((m) => m.profile)
   const memberCount = memberProfiles.length
 
   // The plan reads in the order it will happen.
@@ -530,7 +552,25 @@ export function ActivitiesPage() {
       <PageHeader
         title="Activities"
         subtitle={`What the group is doing. Add something straight to the plan, or put it to a vote: ${agreeThreshold(memberCount)} of ${memberCount} votes carry it.`}
-        action={<AddActivityDrawer tripId={tripId} members={memberProfiles} userId={userId} />}
+        action={
+          <Button className="min-h-11" onClick={() => setDrawerOpen(true)}>
+            <Plus size={16} aria-hidden="true" />
+            Add activity
+          </Button>
+        }
+      />
+
+      <AddActivityDrawer
+        tripId={tripId}
+        members={memberProfiles}
+        userId={userId}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        preset={blankPreset}
+        onAdded={(mode) => {
+          // Something put to a vote is found on the voting tab.
+          if (mode === 'vote') setTab('voting')
+        }}
       />
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -589,11 +629,7 @@ export function ActivitiesPage() {
               line="Nothing waiting on a vote. Put something to the group and they can call it."
             />
           ) : (
-            <ul className="flex flex-col gap-3">
-              {open.map((idea) => (
-                <VoteRow key={idea.id} idea={idea} {...voteProps} />
-              ))}
-            </ul>
+            <VotingBoard ideas={open} members={memberProfiles} {...voteProps} />
           )}
         </TabsContent>
 
@@ -603,7 +639,7 @@ export function ActivitiesPage() {
           ) : (
             <ul className="flex flex-col gap-3">
               {rejected.map((idea) => (
-                <VoteRow key={idea.id} idea={idea} {...voteProps} />
+                <VoteCard key={idea.id} idea={idea} {...voteProps} />
               ))}
             </ul>
           )}

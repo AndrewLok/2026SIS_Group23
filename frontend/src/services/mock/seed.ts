@@ -172,6 +172,20 @@ export function buildSeed(): Db {
         proposed_by: JONAS,
         created_at: at(-12),
       },
+      // Same morning as the kayak, so the vote shows two options side by side.
+      {
+        id: 'idea-lighthouse',
+        trip_id: TRIP,
+        title: 'Cape Otway lightstation',
+        description: 'Climb the lighthouse and look for whales. Café on site for the non-climbers.',
+        category: 'activity',
+        proposed_start: at(TRIP_START_OFFSET + 4, 9, 30),
+        proposed_end: at(TRIP_START_OFFSET + 4, 12, 0),
+        all_day: false,
+        status: 'voting',
+        proposed_by: PRIYA,
+        created_at: at(-5),
+      },
       {
         id: 'idea-winery',
         trip_id: TRIP,
@@ -251,6 +265,10 @@ export function buildSeed(): Db {
 
       // Surf: one vote so far.
       { idea_id: 'idea-surf', user_id: MIA, value: 1, created_at: at(-6) },
+
+      // Lightstation: Priya and Mia would rather do this than kayak.
+      { idea_id: 'idea-lighthouse', user_id: PRIYA, value: 1, created_at: at(-5) },
+      { idea_id: 'idea-lighthouse', user_id: MIA, value: 1, created_at: at(-4) },
 
       // Skydive: rejected outright.
       { idea_id: 'idea-skydive', user_id: JONAS, value: 1, created_at: at(-20) },

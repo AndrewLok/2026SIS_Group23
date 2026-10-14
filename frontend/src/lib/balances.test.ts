@@ -18,7 +18,7 @@ describe('seed data', () => {
   it('has the shape the plan specifies', () => {
     expect(seed.profiles).toHaveLength(5)
     expect(memberIds).toHaveLength(5)
-    expect(seed.ideas).toHaveLength(9)
+    expect(seed.ideas).toHaveLength(10)
     expect(expenses).toHaveLength(12)
     expect(fuelLegs).toHaveLength(3)
     expect(seed.bookings).toHaveLength(4)
