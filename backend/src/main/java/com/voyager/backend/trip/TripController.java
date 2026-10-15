@@ -1,4 +1,4 @@
-package com.voyager.backend.controller;
+package com.voyager.backend.trip;
 
 import java.util.List;
 
@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.voyager.backend.dto.CreateTripRequest;
-import com.voyager.backend.model.Trip;
-import com.voyager.backend.repository.TripRepository;
+import com.voyager.backend.requestDTO.CreateTripRequest;
+import com.voyager.backend.trip.Trip;
+import com.voyager.backend.trip.TripRepository;
 
 @RestController
 @RequestMapping("/api/trips")

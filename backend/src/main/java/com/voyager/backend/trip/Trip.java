@@ -1,4 +1,4 @@
-package com.voyager.backend.model;
+package com.voyager.backend.trip;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,19 +16,21 @@ public class Trip {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id; // The unique ID of the trip.
+
+    private Long tripOwner; // The unique ID of the trip's owner/planner.
 
     @Column(nullable = false)
-    private String destination;
+    private String destination; // The destination of the trip (Expand to be able to include multiple destinations?)
 
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDate startDate; // Trip start date
+    private LocalDate endDate; // Trip end date (Maybe make per-user start and end dates?)
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal budgetCap;
+    private BigDecimal budgetCap; // The budget cap of the trip (Maybe make per-user budget cap?)
 
     @Column(unique = true)
-    private String joinCode;
+    private String joinCode; // The code to be able to join the trip (Investigate if it would be better for the trip 'planner' to invite people instead)
 
     public Trip() {}
 

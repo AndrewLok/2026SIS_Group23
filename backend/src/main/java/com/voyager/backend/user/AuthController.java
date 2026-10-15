@@ -1,4 +1,4 @@
-package com.voyager.backend.controller;
+package com.voyager.backend.user;
 
 import java.util.Map;
 
@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import com.voyager.backend.dto.LoginRequest;
-import com.voyager.backend.model.User;
-import com.voyager.backend.repository.UserRepository;
-import com.voyager.backend.dto.RegisterRequest;
+import com.voyager.backend.user.User;
+import com.voyager.backend.user.UserRepository;
+import com.voyager.backend.user.requestDTO.RegisterRequest;
+import com.voyager.backend.requestDTO.LoginRequest;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -53,8 +53,8 @@ public class AuthController{
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request){
         User user = userRepository
-.findByEmailIgnoreCase(request.getEmail().trim().toLowerCase())
-                .orElse(null);
+                    .findByEmailIgnoreCase(request.getEmail().trim().toLowerCase())
+                    .orElse(null);
 
         if(user == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password"));

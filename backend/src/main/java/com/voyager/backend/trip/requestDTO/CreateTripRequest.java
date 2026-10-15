@@ -1,4 +1,4 @@
-package com.voyager.backend.dto;
+package com.voyager.backend.trip.requestDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

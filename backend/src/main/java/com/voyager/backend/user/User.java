@@ -1,4 +1,4 @@
-package com.voyager.backend.model;
+package com.voyager.backend.user;
 
 import java.util.UUID;
 
