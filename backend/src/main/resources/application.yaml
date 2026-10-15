@@ -2,14 +2,14 @@ spring:
   application:
     name: voyager-backend
   datasource:
-    url: jdbc:h2:mem:voyagerdb
+    url: jdbc:h2:mem:voyagerdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
     driverClassName: org.h2.Driver
     username: sa
     password: 
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
   h2:
     console:

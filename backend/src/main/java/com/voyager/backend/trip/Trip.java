@@ -16,7 +16,7 @@ import jakarta.persistence.Table;
 public class Trip {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id; // The unique ID of the trip.
 
     private UUID tripOwner; // The unique ID of the trip's owner/planner.
