@@ -11,10 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import com.voyager.backend.user.User;
-import com.voyager.backend.user.UserRepository;
-import com.voyager.backend.user.requestDTO.RegisterRequest;
-import com.voyager.backend.requestDTO.LoginRequest;
+import com.voyager.backend.user.requestDTO.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,16 +28,16 @@ public class AuthController{
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request){
 
-        String email = request.getEmail().trim().toLowerCase();
+        String email = request.email().trim().toLowerCase();
 
         if (userRepository.existsByEmailIgnoreCase(email)){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Email already exists"));
         }
-        String hashedPassword = passwordEncoder.encode(request.getPassword());
+        String hashedPassword = passwordEncoder.encode(request.password());
 
         User user = new User(
-            request.getFirstName(),
-            request.getLastName(),
+            request.firstName(),
+            request.lastName(),
             email,
             hashedPassword
          );
@@ -53,14 +50,14 @@ public class AuthController{
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request){
         User user = userRepository
-                    .findByEmailIgnoreCase(request.getEmail().trim().toLowerCase())
+                    .findByEmailIgnoreCase(request.email().trim().toLowerCase())
                     .orElse(null);
 
         if(user == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password"));
         }
 
-        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        boolean passwordMatches = passwordEncoder.matches(request.password(), user.getPasswordHash());
 
         if(!passwordMatches){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password"));

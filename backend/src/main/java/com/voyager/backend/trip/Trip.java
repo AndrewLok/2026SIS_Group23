@@ -1,5 +1,6 @@
 package com.voyager.backend.trip;
 
+import java.util.UUID;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -16,9 +17,9 @@ public class Trip {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // The unique ID of the trip.
+    private UUID id; // The unique ID of the trip.
 
-    private Long tripOwner; // The unique ID of the trip's owner/planner.
+    private UUID tripOwner; // The unique ID of the trip's owner/planner.
 
     @Column(nullable = false)
     private String destination; // The destination of the trip (Expand to be able to include multiple destinations?)
@@ -42,7 +43,7 @@ public class Trip {
         this.joinCode = joinCode;
     }
 
-    public Long getId() { return id; }
+    public UUID getId() { return id; }
     public String getDestination() { return destination; }
     public void setDestination(String destination) { this.destination = destination; }
     public LocalDate getStartDate() { return startDate; }
