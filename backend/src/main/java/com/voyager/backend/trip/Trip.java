@@ -8,18 +8,20 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-@Entity
-@Table(name = "trips")
+// Instead of writing SQL, we use JPA (Jakarta Persistence API) to map objects to database tables.
+
+@Entity // This tag tells JPA that the class represents a database table.
+@Table(name = "trips",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"id"}))
 public class Trip {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id; // The unique ID of the trip.
-
-    private UUID tripOwner; // The unique ID of the trip's owner/planner.
 
     @Column(nullable = false)
     private String destination; // The destination of the trip (Expand to be able to include multiple destinations?)

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.voyager.backend.trip.requestDTO.*;
+import com.voyager.backend.trip.requestdto.*;
 
 @RestController
 @RequestMapping("/api/trips")
