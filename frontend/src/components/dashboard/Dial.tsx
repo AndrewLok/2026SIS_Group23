@@ -100,8 +100,8 @@ export function Dial({
         >
           <defs>
             <radialGradient id={`${id}-face`} cx="0.5" cy="0.42" r="0.6">
-              <stop offset="0" stopColor="#13171b" />
-              <stop offset="1" stopColor="#050608" />
+              <stop offset="0" stopColor="var(--dial-face-hi)" />
+              <stop offset="1" stopColor="var(--dial-face-lo)" />
             </radialGradient>
             <linearGradient id={`${id}-hub`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor="var(--chrome-hi)" />
@@ -128,10 +128,10 @@ export function Dial({
           </defs>
 
           {/* A bright lip where the ring meets the glass, a dark gap, then the face sunk below. */}
-          <circle cx={C} cy={C} r={93} fill="#020303" />
-          <circle cx={C} cy={C} r={93.4} fill="none" stroke="#e4e9ed" strokeOpacity={0.5} strokeWidth={0.8} />
+          <circle cx={C} cy={C} r={93} fill="var(--dial-gap)" />
+          <circle cx={C} cy={C} r={93.4} fill="none" stroke="var(--dial-lip)" strokeOpacity={0.5} strokeWidth={0.8} />
           <circle cx={C} cy={C} r={91} fill={`url(#${id}-face)`} />
-          <circle cx={C} cy={C} r={89} fill="none" stroke="#000" strokeOpacity={0.7} strokeWidth={4} />
+          <circle cx={C} cy={C} r={89} fill="none" stroke="var(--shade)" strokeOpacity={0.7} strokeWidth={4} />
 
           {caution ? (
             <path
@@ -254,7 +254,7 @@ export function Dial({
             />
           </g>
           <circle cx={C} cy={C} r={11} fill={`url(#${id}-hub)`} />
-          <circle cx={C} cy={C} r={8.5} fill="#07080a" />
+          <circle cx={C} cy={C} r={8.5} fill="var(--hub-cap)" />
 
           {/* The glass over the face catches a crescent of light, clear of the reading. */}
           <rect

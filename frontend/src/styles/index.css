@@ -134,8 +134,8 @@
     --radius: 0.25rem;
 
     /* Depth. Real offset and blur; the inset is a recessed instrument face. */
-    --shadow-panel: 0 1px 0 0 var(--bezel-edge) inset, 0 8px 24px -12px #000000;
-    --shadow-recessed: 0 2px 6px 0 #00000080 inset;
+    --shadow-panel: 0 1px 0 0 var(--bezel-edge) inset, 0 8px 24px -12px var(--shade);
+    --shadow-recessed: 0 2px 6px 0 color-mix(in oklab, var(--shade) 50%, transparent) inset;
 
     /* Phosphor. A luminous marking actually glows; this is material, not decoration. */
     --glow-radium: 0 0 18px #7cff9e40, 0 0 5px #7cff9e30;
@@ -172,6 +172,98 @@
     --foliage: #0b1a10;
     --foliage-far: #0a1610;
     --road-sign: oklch(0.4 0.085 160);
+    --star: var(--luminous);
+    --road-paint: var(--luminous);
+    --sign-legend: var(--luminous);
+    --sign-post: #4a5057;
+    --guide-post: #c9d0d3;
+    --beam: #fff1d6;
+    --headlight: #fff4dc;
+    --mirror-hi: #1b2230;
+    --mirror-lo: #0a0d13;
+    --mirror-hover-hi: #232c3d;
+    --mirror-hover-lo: #0d1118;
+    --cowl-lip: #15171a;
+    --cowl-seam: color-mix(in oklab, white 6%, transparent);
+    --shade: #000;
+    --well: #030405;
+    --well-lit: #0a0703;
+    --drum-edge: #000;
+    --drum-mid: #16191c;
+    --drum-core: #1c2024;
+    --dial-face-hi: #13171b;
+    --dial-face-lo: #050608;
+    --dial-gap: #020303;
+    --dial-lip: #e4e9ed;
+    --hub-cap: #07080a;
+
+    --avatar-bg: 0.32 0.07;
+    --avatar-ink: 0.93 0.06;
+    --avatar-rim: 0.46 0.09;
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
+
+    --panel: #eef1f2;
+    --face: #f7f9f9;
+    --face-raised: #fdfefe;
+    --bezel: #d4dadd;
+    --bezel-edge: #b3bcc1;
+    --luminous: #101517;
+    --placard: #313b41;
+    --radium: #066634;
+    --caution: #704600;
+    --warning: #c1271c;
+
+    --shadow-panel: 0 1px 0 0 var(--face-raised) inset, 0 8px 24px -12px var(--shade);
+    --shadow-recessed: 0 2px 6px 0 color-mix(in oklab, var(--shade) 50%, transparent) inset;
+
+    --glow-radium: none;
+    --glow-caution: none;
+
+    --needle: #d9480f;
+    --chrome-hi: #f1f4f6;
+    --chrome-mid: #a3abb2;
+    --chrome-lo: #5f676e;
+    --cowl: #e4e9eb;
+    --sky-top: #6ea4cc;
+    --sky-horizon: #d3e5ee;
+    --hill-far: #93aca6;
+    --hill-near: #6e8d74;
+    --asphalt: #5b6167;
+    --verge-far: #93b282;
+    --verge-near: #6c9a5c;
+    --foliage: #3d6a44;
+    --foliage-far: #73927a;
+    --star: transparent;
+    --road-paint: #f7f9f9;
+    --sign-legend: #f7f9f9;
+    --sign-post: #6b737a;
+    --guide-post: #eef1f2;
+    --beam: transparent;
+    --headlight: transparent;
+    --mirror-hi: #b7cfe0;
+    --mirror-lo: #7f9bb1;
+    --mirror-hover-hi: #c4d9e8;
+    --mirror-hover-lo: #8aa6bb;
+    --cowl-lip: #f4f6f7;
+    --cowl-seam: color-mix(in oklab, var(--shade) 30%, transparent);
+    --shade: #1f2a3366;
+    --well: #eef1f2;
+    --well-lit: #f6ecd6;
+    --drum-edge: #9aa4aa;
+    --drum-mid: #e2e7ea;
+    --drum-core: #f6f8f9;
+    --dial-face-hi: #fbfcfc;
+    --dial-face-lo: #dde3e6;
+    --dial-gap: #4b545b;
+    --dial-lip: #ffffff;
+    --hub-cap: #2b3238;
+
+    --avatar-bg: 0.9 0.05;
+    --avatar-ink: 0.36 0.09;
+    --avatar-rim: 0.72 0.08;
 }
 
 @layer base {
@@ -262,7 +354,7 @@
             circle at 32% 30%,
             var(--bezel-edge) 0%,
             var(--bezel) 58%,
-            color-mix(in oklab, black 45%, var(--bezel)) 100%
+            color-mix(in oklab, var(--shade) 45%, var(--bezel)) 100%
         );
         box-shadow: 0 1px 0 0 color-mix(in oklab, white 8%, transparent);
     }
@@ -372,8 +464,8 @@
     /* The glass itself: a dark seal at the edges and one faint raked sheen. */
     .windscreen-glass {
         box-shadow:
-            inset 0 0 0 1px #000,
-            inset 0 0 28px 6px #000000c0;
+            inset 0 0 0 1px var(--shade),
+            inset 0 0 28px 6px color-mix(in oklab, var(--shade) 75%, transparent);
         background: linear-gradient(
             112deg,
             transparent 38%,
@@ -386,10 +478,10 @@
     .cowl {
         background:
             var(--texture-fine),
-            linear-gradient(180deg, #15171a 0%, var(--cowl) 22%, var(--cowl) 100%);
+            linear-gradient(180deg, var(--cowl-lip) 0%, var(--cowl) 22%, var(--cowl) 100%);
         box-shadow:
             0 1px 0 0 color-mix(in oklab, white 9%, transparent) inset,
-            0 -10px 24px -8px #000;
+            0 -10px 24px -8px var(--shade);
     }
 
     /*
@@ -417,13 +509,13 @@
         overflow: hidden;
         background: linear-gradient(
             180deg,
-            #000 0%,
-            #16191c 30%,
-            #1c2024 50%,
-            #16191c 70%,
-            #000 100%
+            var(--drum-edge) 0%,
+            var(--drum-mid) 30%,
+            var(--drum-core) 50%,
+            var(--drum-mid) 70%,
+            var(--drum-edge) 100%
         );
-        border-inline: 1px solid #000;
+        border-inline: 1px solid var(--drum-edge);
     }
 
     .drum-strip {
@@ -465,9 +557,9 @@
         height: 2.25rem;
         padding-inline: 0.5rem;
         border-radius: 0.375rem;
-        background: #030405;
+        background: var(--well);
         box-shadow:
-            inset 0 2px 5px #000,
+            inset 0 2px 5px var(--shade),
             0 1px 0 0 color-mix(in oklab, white 7%, transparent);
         transition: background-color 200ms ease-out;
     }
@@ -475,15 +567,15 @@
     .lamp-lens-lit {
         background: radial-gradient(
             ellipse at 50% 55%,
-            color-mix(in oklab, var(--caution) 26%, #030405) 0%,
-            #0a0703 85%
+            color-mix(in oklab, var(--caution) 26%, var(--well)) 0%,
+            var(--well-lit) 85%
         );
     }
 
     .group:hover .lamp-lens,
     .group:focus-visible .lamp-lens {
         box-shadow:
-            inset 0 2px 5px #000,
+            inset 0 2px 5px var(--shade),
             0 0 0 1px var(--bezel-edge);
     }
 
@@ -495,9 +587,9 @@
         position: relative;
         border-radius: 9999px;
         padding: 5px;
-        background: #030405;
+        background: var(--well);
         box-shadow:
-            inset 0 8px 14px -2px #000,
+            inset 0 8px 14px -2px var(--shade),
             0 1px 0 0 color-mix(in oklab, white 7%, transparent);
     }
 
@@ -506,7 +598,7 @@
         position: absolute;
         inset: 5px;
         border-radius: inherit;
-        background: linear-gradient(180deg, #000000a0 0%, transparent 26%);
+        background: linear-gradient(180deg, color-mix(in oklab, var(--shade) 62.75%, transparent) 0%, transparent 26%);
         pointer-events: none;
     }
 

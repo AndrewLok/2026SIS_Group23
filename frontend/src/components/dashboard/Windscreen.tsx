@@ -111,22 +111,22 @@ function RoadScene() {
         </linearGradient>
         {/* Low beams: brightest at the bonnet, gone well before the horizon. */}
         <linearGradient id="ws-beam" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0" stopColor="#fff1d6" stopOpacity="0.2" />
-          <stop offset="0.55" stopColor="#fff1d6" stopOpacity="0.07" />
-          <stop offset="1" stopColor="#fff1d6" stopOpacity="0" />
+          <stop offset="0" stopColor="var(--beam)" stopOpacity="0.2" />
+          <stop offset="0.55" stopColor="var(--beam)" stopOpacity="0.07" />
+          <stop offset="1" stopColor="var(--beam)" stopOpacity="0" />
         </linearGradient>
         <filter id="ws-beam-soft" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="5" />
         </filter>
         <radialGradient id="ws-headlights" cx="0.5" cy="1" r="0.5">
-          <stop offset="0" stopColor="#fff4dc" stopOpacity="0.16" />
-          <stop offset="1" stopColor="#fff4dc" stopOpacity="0" />
+          <stop offset="0" stopColor="var(--headlight)" stopOpacity="0.16" />
+          <stop offset="1" stopColor="var(--headlight)" stopOpacity="0" />
         </radialGradient>
       </defs>
 
       <rect width="400" height="120" fill="url(#ws-sky)" />
       {STARS.map((s) => (
-        <circle key={s.key} cx={s.x} cy={s.y} r={s.r} fill="var(--luminous)" opacity={s.o} />
+        <circle key={s.key} cx={s.x} cy={s.y} r={s.r} fill="var(--star)" opacity={s.o} />
       ))}
 
       {/* Hills: a far range across the horizon, nearer shoulders either side. */}
@@ -144,7 +144,7 @@ function RoadScene() {
       <rect y="118" width="400" height="82" fill="url(#ws-verge)" />
       <polygon points="198,118 202,118 470,200 -70,200" fill="var(--asphalt)" />
       <ellipse cx="200" cy="200" rx="230" ry="70" fill="url(#ws-headlights)" />
-      <g stroke="var(--luminous)" strokeOpacity="0.28" strokeWidth="1.2">
+      <g stroke="var(--road-paint)" strokeOpacity="0.28" strokeWidth="1.2">
         <line x1="198" y1="118" x2="-60" y2="200" />
         <line x1="202" y1="118" x2="460" y2="200" />
       </g>
@@ -177,7 +177,7 @@ function RoadScene() {
           className="road-mover"
           style={moverStyle(i / DASHES)}
           points="197.6,150 202.4,150 203.6,172 196.4,172"
-          fill="var(--luminous)"
+          fill="var(--road-paint)"
           fillOpacity="0.7"
         />
       ))}
@@ -185,8 +185,8 @@ function RoadScene() {
       {/* Guide posts either side, staggered so they never pass in pairs. */}
       {Array.from({ length: POSTS }, (_, i) => (
         <g key={`post-l-${i}`} className="road-mover" style={moverStyle(i / POSTS)}>
-          <rect x="13" y="150" width="4" height="18" fill="#c9d0d3" fillOpacity="0.75" />
-          <rect x="13" y="151" width="4" height="4" fill="var(--luminous)" />
+          <rect x="13" y="150" width="4" height="18" fill="var(--guide-post)" fillOpacity="0.75" />
+          <rect x="13" y="151" width="4" height="4" fill="var(--road-paint)" />
         </g>
       ))}
       {Array.from({ length: POSTS }, (_, i) => (
@@ -195,8 +195,8 @@ function RoadScene() {
           className="road-mover"
           style={moverStyle((i + 0.5) / POSTS)}
         >
-          <rect x="383" y="150" width="4" height="18" fill="#c9d0d3" fillOpacity="0.75" />
-          <rect x="383" y="151" width="4" height="4" fill="var(--luminous)" />
+          <rect x="383" y="150" width="4" height="18" fill="var(--guide-post)" fillOpacity="0.75" />
+          <rect x="383" y="151" width="4" height="4" fill="var(--road-paint)" />
         </g>
       ))}
 
@@ -250,8 +250,8 @@ export function Windscreen({
         className="group absolute left-1/2 top-0 z-10 flex -translate-x-1/2 flex-col items-center rounded-b-2xl"
       >
         <span className="h-2.5 w-2 bg-[var(--chrome-lo)]" aria-hidden="true" />
-        <span className="rounded-[1.1rem] bg-[linear-gradient(180deg,var(--chrome-hi),var(--chrome-lo))] p-[2px] shadow-[0_6px_14px_-4px_#000]">
-          <span className="relative flex h-11 items-center justify-center overflow-hidden rounded-[1rem] bg-[linear-gradient(170deg,#1b2230_0%,#0a0d13_60%)] px-3 transition-colors group-hover:bg-[linear-gradient(170deg,#232c3d_0%,#0d1118_60%)] md:h-16 md:w-52">
+        <span className="rounded-[1.1rem] bg-[linear-gradient(180deg,var(--chrome-hi),var(--chrome-lo))] p-[2px] shadow-[0_6px_14px_-4px_var(--shade)]">
+          <span className="relative flex h-11 items-center justify-center overflow-hidden rounded-[1rem] bg-[linear-gradient(170deg,var(--mirror-hi)_0%,var(--mirror-lo)_60%)] px-3 transition-colors group-hover:bg-[linear-gradient(170deg,var(--mirror-hover-hi)_0%,var(--mirror-hover-lo)_60%)] md:h-16 md:w-52">
             <AvatarStack profiles={profiles} size={28} />
             {/* The mirror glass catches one raked streak of light. */}
             <span
@@ -267,8 +267,8 @@ export function Windscreen({
         to={next ? `/trips/${tripId}/calendar` : `/trips/${tripId}/activities`}
         className="group absolute right-[5%] top-[30%] z-10 flex w-[min(52%,17rem)] flex-col items-stretch md:right-[3%] md:top-[26%]"
       >
-        <span className="rounded-md bg-[var(--road-sign)] p-[3px] shadow-[0_6px_18px_-6px_#000] transition-[filter] group-hover:brightness-110">
-          <span className="flex items-start gap-2 rounded-[0.3rem] border-2 border-[var(--luminous)] px-2.5 py-2 text-[var(--luminous)]">
+        <span className="rounded-md bg-[var(--road-sign)] p-[3px] shadow-[0_6px_18px_-6px_var(--shade)] transition-[filter] group-hover:brightness-110">
+          <span className="flex items-start gap-2 rounded-[0.3rem] border-2 border-[var(--sign-legend)] px-2.5 py-2 text-[var(--sign-legend)]">
             <ArrowUp size={20} strokeWidth={3} className="mt-0.5 shrink-0" aria-hidden="true" />
             {next ? (
               <span className="flex min-w-0 flex-col gap-0.5">
@@ -291,8 +291,8 @@ export function Windscreen({
           </span>
         </span>
         <span className="flex justify-between px-[22%]" aria-hidden="true">
-          <span className="h-16 w-1 bg-[#4a5057] md:h-8" />
-          <span className="h-16 w-1 bg-[#4a5057] md:h-8" />
+          <span className="h-16 w-1 bg-[var(--sign-post)] md:h-8" />
+          <span className="h-16 w-1 bg-[var(--sign-post)] md:h-8" />
         </span>
       </Link>
 

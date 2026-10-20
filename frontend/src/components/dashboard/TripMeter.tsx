@@ -11,7 +11,7 @@ export function TripMeter({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
       <span
-        className="instrument-value flex overflow-hidden rounded-[3px] border border-black bg-black text-2xl leading-none text-radium shadow-[0_0_0_2px_var(--chrome-mid),0_2px_6px_#000] md:text-3xl"
+        className="instrument-value flex overflow-hidden rounded-[3px] border border-[var(--drum-edge)] bg-[var(--drum-edge)] text-2xl leading-none text-radium shadow-[0_0_0_2px_var(--chrome-mid),0_2px_6px_var(--shade)] md:text-3xl"
         aria-hidden="true"
       >
         {[...value].map((char, i) => (

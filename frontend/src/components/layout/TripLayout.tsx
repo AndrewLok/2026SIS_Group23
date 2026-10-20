@@ -11,12 +11,15 @@ import {
   Gauge,
   LogOut,
   MessageSquare,
+  Moon,
   MoreVertical,
   Plane,
+  Sun,
   Users,
   Wallet,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -52,6 +55,8 @@ function TopBar({ tripId }: { tripId: string }) {
   const trip = useTrip(tripId)
   const { signOut } = useSession()
   const navigate = useNavigate()
+  const { theme, setTheme } = useTheme()
+  const light = theme === 'light'
 
   return (
     <header className="sticky top-0 z-20 border-b border-bezel bg-panel/95 backdrop-blur-sm">
@@ -88,6 +93,10 @@ function TopBar({ tripId }: { tripId: string }) {
             <DropdownMenuItem onSelect={() => navigate(`/trips/${tripId}/fuel`)}>
               <Gauge size={15} aria-hidden="true" />
               Fuel and travel
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setTheme(light ? 'dark' : 'light')}>
+              {light ? <Moon size={15} aria-hidden="true" /> : <Sun size={15} aria-hidden="true" />}
+              {light ? 'Dark theme' : 'Light theme'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => void signOut()}>

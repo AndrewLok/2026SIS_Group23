@@ -17,9 +17,9 @@ export const initialsFor = (name: string): string =>
 
 /** The hue is the member's own; lightness and chroma stay fixed so contrast holds. */
 const hueStyle = (hue: number) => ({
-  backgroundColor: `oklch(0.32 0.07 ${hue})`,
-  color: `oklch(0.93 0.06 ${hue})`,
-  borderColor: `oklch(0.46 0.09 ${hue})`,
+  backgroundColor: `oklch(var(--avatar-bg) ${hue})`,
+  color: `oklch(var(--avatar-ink) ${hue})`,
+  borderColor: `oklch(var(--avatar-rim) ${hue})`,
 })
 
 export function MemberAvatar({

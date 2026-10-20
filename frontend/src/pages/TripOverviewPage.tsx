@@ -253,7 +253,7 @@ export function TripOverviewPage() {
 
           <nav
             aria-label="Warning lamps"
-            className="mt-5 grid grid-cols-4 border-t border-white/6 pt-1 md:mt-7"
+            className="mt-5 grid grid-cols-4 border-t border-[var(--cowl-seam)] pt-1 md:mt-7"
           >
             <Lamp
               to={`/trips/${tripId}/activities?tab=voting`}
