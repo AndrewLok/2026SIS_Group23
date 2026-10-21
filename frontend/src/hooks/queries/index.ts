@@ -37,6 +37,7 @@ export const keys = {
   expenses: (tripId: string) => ['trips', tripId, 'expenses'] as const,
   channels: (tripId: string) => ['trips', tripId, 'channels'] as const,
   messages: (channelId: string) => ['channels', channelId, 'messages'] as const,
+  unread: (channelId: string) => ['channels', channelId, 'unread'] as const,
 }
 
 /** Everything on a trip that a balance or a count can depend on. */
@@ -306,10 +307,20 @@ export function useRemoveExpense(tripId: string) {
 export const useChannels = (tripId: string) =>
   useQuery({ queryKey: keys.channels(tripId), queryFn: () => api.chat.listChannels(tripId) })
 
+/** Polled, so messages from the rest of the group turn up without a reload. */
 export const useMessages = (channelId: string | undefined) =>
   useQuery({
     queryKey: keys.messages(channelId ?? 'none'),
     queryFn: () => api.chat.listMessages(channelId as string),
+    enabled: Boolean(channelId),
+    refetchInterval: 3000,
+  })
+
+/** Messages from others since this member last opened the channel, for the dashboard lamp. */
+export const useUnreadCount = (channelId: string | undefined, userId: string) =>
+  useQuery({
+    queryKey: keys.unread(channelId ?? 'none'),
+    queryFn: () => api.chat.unreadCount(channelId as string, userId),
     enabled: Boolean(channelId),
   })
 

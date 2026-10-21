@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { MemberAvatar } from '@/components/common/people'
 import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
-import { useChannels, useMembers, useMessages, useSendMessage } from '@/hooks/queries'
+import { useQueryClient } from '@tanstack/react-query'
+import { keys, useChannels, useMembers, useMessages, useSendMessage } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
 import { api } from '@/services/client'
 import { dayKey, formatDay, formatTime } from '@/lib/dates'
@@ -50,6 +51,7 @@ function groupMessages(messages: Message[]) {
 export function ChatPage() {
   const { tripId = '' } = useParams<{ tripId: string }>()
   const userId = useCurrentUserId()
+  const queryClient = useQueryClient()
   const channels = useChannels(tripId)
   const members = useMembers(tripId)
   const channelId = channels.data?.[0]?.id
@@ -64,7 +66,7 @@ export function ChatPage() {
    * the screen marks the channel read, so re-deriving it later would always come
    * back empty and the divider would vanish while you were still looking at it.
    */
-  const dividerId = React.useRef<string | null | undefined>(undefined)
+  const [dividerId, setDividerId] = React.useState<string | null>(null)
   const markedRead = React.useRef(false)
 
   const profiles = React.useMemo(
@@ -72,15 +74,20 @@ export function ChatPage() {
     [members.data],
   )
 
-  if (channelId && dividerId.current === undefined) {
-    dividerId.current = api.chat.firstUnreadId(channelId, userId)
-  }
-
+  // The divider has to be found before the channel is marked read, so the two run in order.
   React.useEffect(() => {
     if (!channelId || markedRead.current) return
     markedRead.current = true
-    void api.chat.markRead(channelId)
-  }, [channelId])
+    void api.chat
+      .firstUnreadId(channelId, userId)
+      .then(setDividerId)
+      .catch(() => setDividerId(null))
+      .finally(() => {
+        void api.chat.markRead(channelId).then(() =>
+          queryClient.invalidateQueries({ queryKey: keys.unread(channelId) }),
+        )
+      })
+  }, [channelId, userId, queryClient])
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' })
@@ -122,7 +129,7 @@ export function ChatPage() {
             const mine = group.authorId === userId
             const showDay =
               groupIndex === 0 || groups[groupIndex - 1]?.day !== group.day
-            const carriesDivider = group.messages.some((m) => m.id === dividerId.current)
+            const carriesDivider = group.messages.some((m) => m.id === dividerId)
 
             return (
               <React.Fragment key={`${group.authorId}-${group.messages[0]?.id}`}>

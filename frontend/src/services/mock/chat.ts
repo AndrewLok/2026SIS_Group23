@@ -38,7 +38,7 @@ export async function send(channelId: string, body: string): Promise<Message> {
 }
 
 /** How many messages this member has not seen in the channel. */
-export function unreadCount(channelId: string, userId: string): number {
+export async function unreadCount(channelId: string, userId: string): Promise<number> {
   const db = read()
   const lastRead = db.channelReads[`${userId}:${channelId}`]
   return db.messages.filter(
@@ -56,7 +56,7 @@ export function unreadCount(channelId: string, userId: string): number {
  * the end: the unread count skips your own messages, so an offset from the tail
  * lands past the real boundary whenever you have spoken recently.
  */
-export function firstUnreadId(channelId: string, userId: string): string | null {
+export async function firstUnreadId(channelId: string, userId: string): Promise<string | null> {
   const db = read()
   const lastRead = db.channelReads[`${userId}:${channelId}`]
   const ordered = db.messages

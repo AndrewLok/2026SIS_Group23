@@ -57,22 +57,26 @@ Four rules hold throughout:
 
 ## Wiring a real backend
 
-`src/services/client.ts` is the only file that has to change. Rewrite the modules behind
-it keeping the same method signatures, and no screen is touched.
+The Spring backend in `/backend` implements every operation the mock does, with the same
+rules, so the app runs against it unchanged. `src/services/client.ts` picks the
+implementation; `src/services/http` is the HTTP one, typed against the mock so a signature
+drifting on either side fails the build.
 
-Things to sort out with whoever owns the backend branch first:
+To run against the backend (needs JDK 25):
 
-- Their ids are `Long`. Keep ids as strings here and convert in the mapper.
-- They use `BigDecimal` for money. Parse to integer cents on the way in and send decimal
-  strings on the way out. Never let a float into the app.
-- `AuthController` is a stub. Ask whether it will issue a session cookie or a JWT before
-  writing `useSession` against it.
-- Ideas, votes, expenses, fuel legs and bookings do not exist server side yet. Those
-  endpoints are a conversation, not a swap.
-- Their `Trip` has no name, no invite code and no members. This app needs all three.
+```sh
+cd backend && ./gradlew bootRun          # http://127.0.0.1:8080, seeded with the demo trip
+cd frontend && npm run dev:backend       # Vite proxies /api to the backend
+```
 
-Keep the mock layer in the repo behind `VITE_USE_MOCK`. It is what makes the app
-demoable when the backend is on someone else's branch and not running.
+- Sign-in is a server session (the `JSESSIONID` cookie). The proxy keeps it same-origin.
+- The database is in-memory H2: every backend restart, or `POST /api/demo/reset`, puts the
+  demo trip back. Every seeded account's password is `roadtrip`.
+- The backend speaks the app's camelCase shapes, ids are strings, money is integer cents
+  and timestamps are written exactly as `toISOString()` writes them.
+- Chat is polled every few seconds; no socket set-up is needed.
+
+`npm run dev` still uses the mock layer, so the app stays demoable with no backend running.
 
 ## Design
 

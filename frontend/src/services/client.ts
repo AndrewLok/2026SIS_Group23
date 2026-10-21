@@ -1,15 +1,22 @@
 /*
  * The swap point.
  *
- * Every component and every query hook talks to this object and nothing else.
- * Wiring a real backend means rewriting the modules behind it while keeping the
- * method signatures, and no screen changes.
+ * Every component and every query hook talks to this object and nothing else. There are
+ * two implementations behind it with identical signatures, and no screen knows which one
+ * it is using:
  *
- * The mock layer stays in the repo behind VITE_USE_MOCK so the app remains
- * demoable with no backend running, which matters in a group project where the
- * backend lives on someone else's branch.
+ *   mock  an in-browser store (src/services/mock), so the app stays demoable with no
+ *         backend running. The default.
+ *   http  the Spring backend in /backend (src/services/http). Run `npm run dev:backend`,
+ *         or set VITE_USE_MOCK=false.
  */
 
+import * as httpAuth from '@/services/http/auth'
+import * as httpChat from '@/services/http/chat'
+import * as httpDemo from '@/services/http/demo'
+import * as httpIdeas from '@/services/http/ideas'
+import * as httpMoney from '@/services/http/money'
+import * as httpTrips from '@/services/http/trips'
 import * as mockAuth from '@/services/mock/auth'
 import * as mockBookings from '@/services/mock/bookings'
 import * as mockChat from '@/services/mock/chat'
@@ -20,17 +27,7 @@ import * as mockTrips from '@/services/mock/trips'
 import * as mockVotes from '@/services/mock/votes'
 import { reset as resetDb } from '@/services/mock/db'
 
-const useMock = import.meta.env.VITE_USE_MOCK !== 'false'
-
-if (!useMock) {
-  // Left deliberately loud: there is no HTTP implementation yet, and the group
-  // has not settled which backend this points at. See section 10 of the plan.
-  throw new Error(
-    'VITE_USE_MOCK=false, but no real backend client exists yet. Remove the flag or implement it here.',
-  )
-}
-
-export const api = {
+const mockApi = {
   auth: {
     getSession: mockAuth.getSession,
     signIn: mockAuth.signIn,
@@ -94,8 +91,67 @@ export const api = {
   },
   /** Demo-only escape hatch, surfaced in trip settings. */
   demo: {
-    reset: resetDb,
+    reset: async (): Promise<void> => resetDb(),
   },
 }
 
-export type Api = typeof api
+export type Api = typeof mockApi
+
+/** Typed against the mock, so a signature drifting on either side fails the build. */
+const httpApi: Api = {
+  auth: {
+    getSession: httpAuth.getSession,
+    signIn: httpAuth.signIn,
+    signUp: httpAuth.signUp,
+    signInAsDemo: httpAuth.signInAsDemo,
+    signOut: httpAuth.signOut,
+  },
+  trips: {
+    list: httpTrips.list,
+    get: httpTrips.get,
+    create: httpTrips.create,
+    update: httpTrips.update,
+    previewByCode: httpTrips.previewByCode,
+    joinByCode: httpTrips.joinByCode,
+    regenerateCode: httpTrips.regenerateCode,
+  },
+  members: {
+    list: httpTrips.listMembers,
+    remove: httpTrips.removeMember,
+    updateRole: httpTrips.updateRole,
+  },
+  ideas: {
+    list: httpIdeas.list,
+    create: httpIdeas.create,
+    update: httpIdeas.update,
+    setStatus: httpIdeas.setStatus,
+    setAttending: httpIdeas.setAttending,
+    remove: httpIdeas.remove,
+  },
+  votes: {
+    listForTrip: httpIdeas.listVotes,
+    cast: httpIdeas.cast,
+    clear: httpIdeas.clear,
+  },
+  bookings: httpMoney.bookings,
+  fuel: httpMoney.fuel,
+  expenses: httpMoney.expenses,
+  chat: {
+    listChannels: httpChat.listChannels,
+    listMessages: httpChat.listMessages,
+    send: httpChat.send,
+    subscribe: httpChat.subscribe,
+    unreadCount: httpChat.unreadCount,
+    firstUnreadId: httpChat.firstUnreadId,
+    markRead: httpChat.markRead,
+  },
+  demo: {
+    reset: httpDemo.reset,
+  },
+}
+
+/** True when the screens are talking to the real backend rather than the in-browser store. */
+export const usingBackend =
+  import.meta.env.VITE_USE_MOCK === 'false' || import.meta.env.MODE === 'backend'
+
+export const api: Api = usingBackend ? httpApi : mockApi
