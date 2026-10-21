@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.voyager.backend.common.ApiException;
@@ -19,6 +18,12 @@ import com.voyager.backend.trip.TripMemberRepository;
 //   - Anyone on the trip can write. Messages cannot be edited or deleted yet.
 //   - What you have read is kept per person per channel, on the server, so the unread count and
 //     the "New" divider agree between your phone and your laptop.
+//
+// Unread is worked out from message times, so the times have to be trustworthy: within a channel
+// they only ever go up, in the order the messages become visible (send locks the channel and stamps
+// the message after the lock), and "I have read it all" is recorded as the time of the newest
+// message that is visible right now, not the clock. That way a message that is still being saved
+// when someone marks the channel read can never end up stamped before their marker and be lost.
 
 @Service
 public class ChatService {
@@ -58,10 +63,10 @@ public class ChatService {
                 .orElseThrow(() -> ApiException.notFound("That chat does not exist."));
     }
 
-    // For the socket, which needs a yes or no rather than an exception. It is asked from inside
-    // "after commit" callbacks too, where joining the finished transaction would be wrong, so it
-    // always runs in a transaction of its own.
-    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+    // For the socket, which needs a yes or no rather than an exception. It is asked from "after commit"
+    // callbacks too. There it simply reads using the connection the finished transaction still holds,
+    // rather than asking the pool for a second one, which a busy pool might never hand over.
+    @Transactional(readOnly = true)
     public boolean canRead(UUID channelId, UUID userId) {
         return channels.findById(channelId)
                 .filter(channel -> members.findByTripIdAndUserId(channel.getTripId(), userId).isPresent())
@@ -102,7 +107,19 @@ public class ChatService {
         if (trimmed.length() > MAX_BODY_LENGTH) {
             throw ApiException.invalid("That message is too long. Keep it under " + MAX_BODY_LENGTH + " characters.");
         }
-        ChatMessage saved = messages.save(new ChatMessage(channelId, userId, trimmed, now()));
+
+        // One message at a time per channel. Taking the lock before reading the clock is what makes
+        // the stamps rise in the order messages commit.
+        channels.findLockedById(channelId).orElseThrow(() -> ApiException.notFound("That chat does not exist."));
+        Instant at = now();
+        Instant newest = messages.findFirstByChannelIdOrderByCreatedAtDescIdDesc(channelId)
+                .map(ChatMessage::getCreatedAt)
+                .orElse(null);
+        if (newest != null && !at.isAfter(newest)) {
+            at = newest.plus(1, ChronoUnit.MICROS); // A clock that stepped back must not reorder the channel.
+        }
+
+        ChatMessage saved = messages.save(new ChatMessage(channelId, userId, trimmed, at));
         events.publishEvent(new MessageSent(channelId, saved.getId()));
         return saved;
     }
@@ -127,14 +144,26 @@ public class ChatService {
         return new ReadState(unread, first);
     }
 
-    // "I have seen everything up to now."
+    // "I have seen everything up to now." Recorded as the newest message that exists right now. With
+    // no messages there is nothing to mark, and every message that arrives later is new anyway.
+    //
+    // Two first-time calls at once (two devices, a double tap) both try to create the marker and one
+    // hits the unique constraint. The controller runs the call again in that case, and the second
+    // run finds the marker the winner made.
     @Transactional
     public void markRead(UUID channelId, UUID userId) {
         requireChannel(channelId, userId);
-        Instant at = now();
+        Instant newest = messages.findFirstByChannelIdOrderByCreatedAtDescIdDesc(channelId)
+                .map(ChatMessage::getCreatedAt)
+                .orElse(null);
+        if (newest == null) {
+            return;
+        }
         ChatRead read = reads.findByUserIdAndChannelId(userId, channelId)
-                .orElseGet(() -> new ChatRead(userId, channelId, at));
-        read.setLastReadAt(at);
-        reads.save(read);
+                .orElseGet(() -> new ChatRead(userId, channelId, newest));
+        if (newest.isAfter(read.getLastReadAt())) {
+            read.setLastReadAt(newest);
+        }
+        reads.saveAndFlush(read);
     }
 }

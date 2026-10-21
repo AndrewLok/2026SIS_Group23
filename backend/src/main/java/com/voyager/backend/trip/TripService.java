@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.voyager.backend.chat.ChatService;
 import com.voyager.backend.common.ApiException;
+import com.voyager.backend.common.Limits;
 import com.voyager.backend.trip.requestdto.CreateTripRequest;
 import com.voyager.backend.user.User;
 import com.voyager.backend.user.UserRepository;
@@ -32,6 +33,8 @@ import com.voyager.backend.user.UserRepository;
 //   - A trip always keeps at least one owner.
 //
 // Methods that change data are transactional, so a rejected request leaves nothing half done.
+// Anything that changes who is on a trip first locks the trip's row (lockTrip), so two requests at
+// the same moment cannot both look at "two owners" and each remove one of them.
 
 @Service
 public class TripService {
@@ -85,6 +88,13 @@ public class TripService {
         return member;
     }
 
+    // Waits for any other change to this trip's membership to finish, then holds the trip until this
+    // transaction ends. Must be the first thing such a method does, so everything it reads afterwards is current.
+    private Trip lockTrip(UUID tripId) {
+        return tripRepository.findLockedById(tripId)
+                .orElseThrow(() -> ApiException.notFound("That trip does not exist."));
+    }
+
     private static String normaliseCode(String code) {
         return code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
     }
@@ -111,6 +121,20 @@ public class TripService {
                 .filter(member -> users.containsKey(member.getUserId()))
                 .map(member -> new MemberDetail(member, users.get(member.getUserId())))
                 .toList();
+    }
+
+    private static String checkedName(String name) {
+        if (name.length() > Limits.TRIP_NAME) {
+            throw ApiException.invalid(Limits.tooLong("name", Limits.TRIP_NAME));
+        }
+        return name;
+    }
+
+    private static String checkedDestination(String destination) {
+        if (destination.length() > Limits.DESTINATION) {
+            throw ApiException.invalid(Limits.tooLong("destination", Limits.DESTINATION));
+        }
+        return destination;
     }
 
     private static void checkDates(Instant start, Instant end) {
@@ -141,14 +165,16 @@ public class TripService {
         if (request.name() == null || request.name().isBlank()) {
             throw ApiException.invalid("Give the trip a name.");
         }
+        String name = checkedName(request.name().trim());
+        String destination = checkedDestination(request.destination() == null ? "" : request.destination().trim());
         checkDates(request.startDate(), request.endDate());
         if (request.budgetCapCents() != null && request.budgetCapCents() < 0) {
             throw ApiException.invalid("The budget cannot be negative.");
         }
 
         Trip trip = tripRepository.save(new Trip(
-                request.name().trim(),
-                request.destination() == null ? "" : request.destination().trim(),
+                name,
+                destination,
                 request.startDate(),
                 request.endDate(),
                 request.budgetCapCents(),
@@ -178,10 +204,10 @@ public class TripService {
             if (name.isEmpty()) {
                 throw ApiException.invalid("Give the trip a name.");
             }
-            trip.setName(name);
+            trip.setName(checkedName(name));
         }
         if (patch.containsKey("destination")) {
-            trip.setDestination(text(patch.get("destination"), "destination").trim());
+            trip.setDestination(checkedDestination(text(patch.get("destination"), "destination").trim()));
         }
         if (patch.containsKey("startDate")) {
             trip.setStartDate(instantOrNull(patch.get("startDate"), "startDate"));
@@ -298,11 +324,14 @@ public class TripService {
 
     public record MemberPreview(Trip trip, List<MemberDetail> members) {}
 
-    // Joining twice is fine: the second time just returns the trip.
+    // Joining twice is fine: the second time just returns the trip. Two taps at the same moment are
+    // too, because the trip is locked while the first one is let in, so the second one finds them there.
     @Transactional
     public Trip join(String code, UUID userId) {
-        Trip trip = tripRepository.findByInviteCode(normaliseCode(code))
-                .orElseThrow(() -> ApiException.notFound("That invite code does not match a trip."));
+        UUID tripId = tripRepository.findByInviteCode(normaliseCode(code))
+                .orElseThrow(() -> ApiException.notFound("That invite code does not match a trip."))
+                .getId();
+        Trip trip = lockTrip(tripId);
         if (memberRepository.findByTripIdAndUserId(trip.getId(), userId).isEmpty()) {
             memberRepository.save(new TripMember(trip.getId(), userId, Role.MEMBER, Instant.now()));
         }
@@ -328,6 +357,7 @@ public class TripService {
     // Owners can remove anyone, and anyone can remove themselves (leave).
     @Transactional
     public void removeMember(UUID tripId, UUID actorId, UUID targetId) {
+        lockTrip(tripId);
         TripMember actor = requireMember(tripId, actorId);
         TripMember target = memberRepository.findByTripIdAndUserId(tripId, targetId)
                 .orElseThrow(() -> ApiException.notFound("That member is not on this trip."));
@@ -343,6 +373,7 @@ public class TripService {
 
     @Transactional
     public void updateRole(UUID tripId, UUID actorId, UUID targetId, Role role) {
+        lockTrip(tripId);
         requireOwner(tripId, actorId, "Only the trip owner can change roles.");
         TripMember target = memberRepository.findByTripIdAndUserId(tripId, targetId)
                 .orElseThrow(() -> ApiException.notFound("That member is not on this trip."));

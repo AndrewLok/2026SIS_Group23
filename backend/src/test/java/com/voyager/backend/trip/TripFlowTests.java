@@ -10,7 +10,15 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -107,6 +115,32 @@ class TripFlowTests {
         return field(response.body(), "id");
     }
 
+    // Runs these at the same moment, each on its own thread, and returns what each one got back.
+    private static <T> List<T> together(List<Callable<T>> actions) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(actions.size());
+        try {
+            CountDownLatch ready = new CountDownLatch(actions.size());
+            CountDownLatch go = new CountDownLatch(1);
+            List<Future<T>> pending = new ArrayList<>();
+            for (Callable<T> action : actions) {
+                pending.add(pool.submit(() -> {
+                    ready.countDown();
+                    go.await();
+                    return action.call();
+                }));
+            }
+            assertTrue(ready.await(5, TimeUnit.SECONDS));
+            go.countDown();
+            List<T> results = new ArrayList<>();
+            for (Future<T> one : pending) {
+                results.add(one.get(20, TimeUnit.SECONDS));
+            }
+            return results;
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
     private String inviteCode(Person member, String tripId) throws Exception {
         return field(member.get("/api/trips/" + tripId).body(), "inviteCode");
     }
@@ -173,6 +207,33 @@ class TripFlowTests {
         HttpResponse<String> garbage = priya.post("/api/trips", "{nope");
         assertEquals(400, garbage.statusCode());
         assertEquals("invalid", code(garbage));
+    }
+
+    @Test
+    void textThatIsTooLongIsRefusedWithAMessageToShowNotAClash() throws Exception {
+        Person priya = person("Priya");
+        String hundred = "n".repeat(100);
+        String tooLong = "n".repeat(101);
+
+        HttpResponse<String> longName = priya.post("/api/trips", "{\"name\":\"" + tooLong + "\"}");
+        assertEquals(400, longName.statusCode(), longName.body());
+        assertEquals("invalid", code(longName));
+        assertTrue(longName.body().contains("too long"), longName.body());
+        HttpResponse<String> longPlace = priya.post("/api/trips", "{\"name\":\"X\",\"destination\":\"" + tooLong + "\"}");
+        assertEquals(400, longPlace.statusCode(), longPlace.body());
+        assertEquals("invalid", code(longPlace));
+
+        // Exactly at the limit is fine.
+        HttpResponse<String> atLimit = priya.post("/api/trips", "{\"name\":\"" + hundred + "\",\"destination\":\"" + hundred + "\"}");
+        assertEquals(201, atLimit.statusCode(), atLimit.body());
+        String tripId = field(atLimit.body(), "id");
+
+        // The same limits apply when editing, and a refused edit changes nothing.
+        HttpResponse<String> renamed = priya.patch("/api/trips/" + tripId, "{\"name\":\"" + tooLong + "\"}");
+        assertEquals(400, renamed.statusCode(), renamed.body());
+        assertEquals("invalid", code(renamed));
+        assertEquals(400, priya.patch("/api/trips/" + tripId, "{\"destination\":\"" + tooLong + "\"}").statusCode());
+        assertTrue(priya.get("/api/trips/" + tripId).body().contains("\"name\":\"" + hundred + "\""));
     }
 
     @Test
@@ -433,5 +494,66 @@ class TripFlowTests {
 
         // The last owner cannot step back to a member either.
         assertEquals(403, jonas.patch(path + jonas.id, "{\"role\":\"member\"}").statusCode());
+    }
+
+    /* Two requests at the same moment */
+
+    @Test
+    void joiningTwiceAtTheSameMomentAddsThePersonOnce() throws Exception {
+        Person priya = person("Priya");
+        Person jonas = person("Jonas");
+        String tripId = createTrip(priya);
+        String code = inviteCode(priya, tripId);
+
+        List<Integer> statuses = together(List.of(
+                () -> jonas.post("/api/trips/join/" + code, null).statusCode(),
+                () -> jonas.post("/api/trips/join/" + code, null).statusCode(),
+                () -> jonas.post("/api/trips/join/" + code, null).statusCode(),
+                () -> jonas.post("/api/trips/join/" + code, null).statusCode()));
+
+        assertEquals(List.of(200, 200, 200, 200), statuses);
+        assertEquals(2, count(priya.get("/api/trips/" + tripId + "/members").body(), "\"role\":"));
+    }
+
+    @Test
+    void twoOwnersLeavingAtTheSameMomentCannotLeaveATripWithNoOwner() throws Exception {
+        for (int round = 0; round < 6; round++) {
+            Person priya = person("Priya");
+            Person jonas = person("Jonas");
+            String tripId = createTrip(priya);
+            jonas.post("/api/trips/join/" + inviteCode(priya, tripId), null);
+            String path = "/api/trips/" + tripId + "/members/";
+            assertEquals(204, priya.patch(path + jonas.id, "{\"role\":\"owner\"}").statusCode());
+
+            List<Integer> statuses = together(List.of(
+                    () -> priya.delete(path + priya.id).statusCode(),
+                    () -> jonas.delete(path + jonas.id).statusCode()));
+
+            // One got out. The other was told the trip needs an owner. Never both out.
+            assertTrue(statuses.contains(204) && statuses.contains(403), "round " + round + ": " + statuses);
+            Person stayer = priya.get("/api/trips/" + tripId).statusCode() == 200 ? priya : jonas;
+            assertEquals(200, stayer.get("/api/trips/" + tripId).statusCode());
+            assertEquals(1, count(stayer.get("/api/trips/" + tripId + "/members").body(), "\"role\":\"owner\""));
+        }
+    }
+
+    @Test
+    void twoOwnersStepDownFromEachOtherAtTheSameMomentAndOneStaysOwner() throws Exception {
+        for (int round = 0; round < 6; round++) {
+            Person priya = person("Priya");
+            Person jonas = person("Jonas");
+            String tripId = createTrip(priya);
+            jonas.post("/api/trips/join/" + inviteCode(priya, tripId), null);
+            String path = "/api/trips/" + tripId + "/members/";
+            assertEquals(204, priya.patch(path + jonas.id, "{\"role\":\"owner\"}").statusCode());
+
+            List<Integer> statuses = together(List.of(
+                    () -> priya.patch(path + jonas.id, "{\"role\":\"member\"}").statusCode(),
+                    () -> jonas.patch(path + priya.id, "{\"role\":\"member\"}").statusCode()));
+
+            // Whoever got in first demoted the other, so the second is no longer allowed to.
+            assertTrue(statuses.contains(204) && statuses.contains(403), "round " + round + ": " + statuses);
+            assertEquals(1, count(priya.get("/api/trips/" + tripId + "/members").body(), "\"role\":\"owner\""));
+        }
     }
 }

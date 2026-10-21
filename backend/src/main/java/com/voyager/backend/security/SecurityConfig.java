@@ -11,8 +11,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 // Login is a server-side session held in an HttpOnly cookie (see the server.servlet.session
-// settings in application.yaml). The browser sends the cookie by itself, JavaScript cannot read it,
-// and logging out or removing someone can take effect immediately on the server.
+// settings in application.yaml). The browser sends the cookie by itself and JavaScript cannot read it.
+// Logging out ends the session on the server straight away, so the cookie stops working at once, and
+// the chat sockets that session opened are closed with it (chat/SignOutClosesSockets).
 
 @Configuration
 @EnableWebSecurity

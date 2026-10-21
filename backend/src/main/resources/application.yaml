@@ -19,9 +19,7 @@ spring:
   jpa:
     open-in-view: false   # Queries belong in services, not in view rendering. Also silences a startup warning.
     hibernate:
-      ddl-auto: update
-    show-sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+      ddl-auto: update    # Fine for an in-memory database that starts empty. Against a real one, use migrations and "validate".
+    show-sql: false       # Switch on while debugging a query; it is far too noisy to leave on.
+  # The H2 web console is deliberately not enabled. It is a way into the whole database, and it is not
+  # covered by the login. If you need it while developing, turn it on in a dev-only profile.

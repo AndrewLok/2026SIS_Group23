@@ -18,10 +18,10 @@ public class User {
     private UUID id;
 
     // The single name the group recognises this person by.
-    @Column(nullable = false)
+    @Column(nullable = false, length = 60) // Limits.DISPLAY_NAME
     private String displayName;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 254) // Limits.EMAIL
     private String email; // Always stored trimmed and lower-cased.
 
     @Column(nullable = false)

@@ -23,10 +23,10 @@ public class Trip {
     @GeneratedValue(strategy = GenerationType.UUID) // IDENTITY is for numeric ids and fails on a UUID.
     private UUID id; // The unique ID of the trip.
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100) // Limits.TRIP_NAME
     private String name; // What the group calls the trip.
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100) // Limits.DESTINATION
     private String destination; // May be empty: the frontend lets a trip start with no destination.
 
     private Instant startDate; // Trip start (optional)

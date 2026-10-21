@@ -17,6 +17,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
 
 // The "look again" nudge. The socket carries no chat content at all: it tells a screen that
 // something new is in a channel, and the screen then asks the REST endpoints for it. That keeps
@@ -32,6 +33,10 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 //   {"type":"error","code":"not_found"|"invalid","channelId":"<uuid>"}   (channelId when there is one)
 //   {"type":"message","channelId":"<uuid>","messageId":"<uuid>"}         something new in a channel
 //   {"type":"pong"}
+//
+// A socket belongs to the login session it was opened with (the handshake interceptor in
+// ChatSocketConfig records the session's id on it). When that session ends, by logging out or
+// by expiring, SignOutClosesSockets calls closeSocketsOf and the socket is closed with it.
 //
 // The frames are tiny and fixed, so they are read with two patterns rather than a JSON library,
 // and written from validated UUIDs, which cannot contain anything that needs escaping.
@@ -81,7 +86,40 @@ public class ChatSocketHandler extends TextWebSocketHandler {
 
     private void forget(String sessionId) {
         senders.remove(sessionId);
-        listeners.values().forEach(ids -> ids.remove(sessionId));
+        for (UUID channelId : listeners.keySet()) {
+            stopListening(channelId, sessionId);
+        }
+    }
+
+    private void listen(UUID channelId, String sessionId) {
+        // compute() is atomic for the key, so a channel's set cannot be thrown away between being found and being added to.
+        listeners.compute(channelId, (id, ids) -> {
+            Set<String> set = ids == null ? ConcurrentHashMap.newKeySet() : ids;
+            set.add(sessionId);
+            return set;
+        });
+    }
+
+    // A channel nobody listens to is dropped from the map, so it does not grow with every channel ever opened.
+    private void stopListening(UUID channelId, String sessionId) {
+        listeners.computeIfPresent(channelId, (id, ids) -> {
+            ids.remove(sessionId);
+            return ids.isEmpty() ? null : ids;
+        });
+    }
+
+    // Closes every socket that was opened with this login session. Called when the session ends.
+    public void closeSocketsOf(String httpSessionId) {
+        for (ConcurrentWebSocketSessionDecorator sender : senders.values()) {
+            if (httpSessionId.equals(sender.getAttributes().get(HttpSessionHandshakeInterceptor.HTTP_SESSION_ID_ATTR_NAME))) {
+                forget(sender.getId());
+                try {
+                    sender.close(CloseStatus.POLICY_VIOLATION);
+                } catch (IOException | RuntimeException ignored) {
+                    // Already gone.
+                }
+            }
+        }
     }
 
     // The signed-in person's id, or null when the socket has no usable principal.
@@ -129,10 +167,7 @@ public class ChatSocketHandler extends TextWebSocketHandler {
         }
 
         if (type.equals("unsubscribe")) {
-            Set<String> ids = listeners.get(channelId);
-            if (ids != null) {
-                ids.remove(session.getId());
-            }
+            stopListening(channelId, session.getId());
             return;
         }
 
@@ -141,7 +176,7 @@ public class ChatSocketHandler extends TextWebSocketHandler {
             send(sender, "{\"type\":\"error\",\"code\":\"not_found\",\"channelId\":\"" + channelId + "\"}");
             return;
         }
-        listeners.computeIfAbsent(channelId, id -> ConcurrentHashMap.newKeySet()).add(session.getId());
+        listen(channelId, session.getId());
         send(sender, "{\"type\":\"subscribed\",\"channelId\":\"" + channelId + "\"}");
     }
 
@@ -176,13 +211,13 @@ public class ChatSocketHandler extends TextWebSocketHandler {
         for (String sessionId : ids) {
             ConcurrentWebSocketSessionDecorator sender = senders.get(sessionId);
             if (sender == null) {
-                ids.remove(sessionId);
+                stopListening(event.channelId(), sessionId);
                 continue;
             }
             // Someone who has left the trip since subscribing stops hearing about it.
             UUID userId = userOf(sender);
             if (userId == null || !chat.canRead(event.channelId(), userId)) {
-                ids.remove(sessionId);
+                stopListening(event.channelId(), sessionId);
                 continue;
             }
             send(sender, frame);

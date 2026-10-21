@@ -10,6 +10,8 @@ public record ErrorResponse(String code, String message) {
         return new ErrorResponse("invalid_credentials", "That email and password do not match.");
     }
     public static ErrorResponse conflict(String message) { return new ErrorResponse("conflict", message); }
+    // "You are not signed in (any more)". Different from forbidden, which is "signed in, but not allowed".
+    public static ErrorResponse unauthenticated(String message) { return new ErrorResponse("unauthenticated", message); }
     public static ErrorResponse forbidden(String message) { return new ErrorResponse("forbidden", message); }
     public static ErrorResponse notFound(String message) { return new ErrorResponse("not_found", message); }
 }

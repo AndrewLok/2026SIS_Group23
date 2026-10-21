@@ -160,4 +160,24 @@ class AuthFlowTests {
         // A missing field is a 400, not a server error.
         assertEquals(400, post("/api/auth/register", "{\"email\":\"" + uniqueEmail() + "\"}").statusCode());
     }
+
+    @Test
+    void aNameOrEmailThatIsTooLongIsRefusedWithAMessageNotReportedAsAClash() throws Exception {
+        String sixty = "n".repeat(60);
+
+        HttpResponse<String> longName = post("/api/auth/register", registerJson("n".repeat(61), uniqueEmail(), "hunter22"));
+        assertEquals(400, longName.statusCode(), longName.body());
+        assertTrue(longName.body().contains("\"code\":\"invalid\""), longName.body());
+        assertTrue(longName.body().contains("too long"), longName.body());
+        assertFalse(longName.body().contains("already an account"), longName.body());
+
+        // The limit counts the name as it will be saved, without the spaces around it.
+        assertEquals(201, post("/api/auth/register", registerJson("  " + sixty + "  ", uniqueEmail(), "hunter22")).statusCode());
+
+        String longEmail = "a".repeat(250) + "@example.com";
+        HttpResponse<String> tooLongEmail = post("/api/auth/register", registerJson("Sam", longEmail, "hunter22"));
+        assertEquals(400, tooLongEmail.statusCode(), tooLongEmail.body());
+        assertTrue(tooLongEmail.body().contains("\"code\":\"invalid\""), tooLongEmail.body());
+        assertFalse(tooLongEmail.body().contains("already an account"), tooLongEmail.body());
+    }
 }

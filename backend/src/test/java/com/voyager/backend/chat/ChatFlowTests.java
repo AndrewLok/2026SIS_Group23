@@ -19,9 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -146,6 +151,8 @@ class ChatFlowTests {
     private final class Socket implements WebSocket.Listener {
         final BlockingQueue<String> frames = new LinkedBlockingQueue<>();
         final CompletableFuture<WebSocket> ready;
+        // Completes with the close code when the server (or anyone) closes the socket.
+        final CompletableFuture<Integer> closed = new CompletableFuture<>();
         private final StringBuilder partial = new StringBuilder();
 
         Socket(Person person, String origin) {
@@ -172,6 +179,12 @@ class ChatFlowTests {
         @Override
         public void onOpen(WebSocket webSocket) {
             webSocket.request(1);
+        }
+
+        @Override
+        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+            closed.complete(statusCode);
+            return null;
         }
 
         WebSocket connected() throws Exception {
@@ -255,6 +268,32 @@ class ChatFlowTests {
         List<String> found = ids(response.body());
         assertEquals(1, found.size(), response.body());
         return found.get(0);
+    }
+
+    // Runs these at the same moment, each on its own thread, and returns what each one got back.
+    private static <T> List<T> together(List<Callable<T>> actions) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(actions.size());
+        try {
+            CountDownLatch ready = new CountDownLatch(actions.size());
+            CountDownLatch go = new CountDownLatch(1);
+            List<Future<T>> pending = new ArrayList<>();
+            for (Callable<T> action : actions) {
+                pending.add(pool.submit(() -> {
+                    ready.countDown();
+                    go.await();
+                    return action.call();
+                }));
+            }
+            assertTrue(ready.await(WAIT_SECONDS, TimeUnit.SECONDS));
+            go.countDown();
+            List<T> results = new ArrayList<>();
+            for (Future<T> one : pending) {
+                results.add(one.get(20, TimeUnit.SECONDS));
+            }
+            return results;
+        } finally {
+            pool.shutdownNow();
+        }
     }
 
     private static String say(String text) {
@@ -426,8 +465,8 @@ class ChatFlowTests {
         String cleared = jonas.get("/api/channels/" + channelId + "/read-state").body();
         assertTrue(cleared.contains("\"unreadCount\":0") && cleared.contains("\"firstUnreadId\":null"), cleared);
 
-        // New things after reading are unread again, and Priya's own position is untouched by his reading.
-        Thread.sleep(5);
+        // New things after reading are unread again, straight away: no pause is needed, because a message
+        // is always stamped later than the newest one before it. Priya's own position is untouched by his reading.
         String newId = field(sendMessage(priya, channelId, "three").body(), "id");
         String later = jonas.get("/api/channels/" + channelId + "/read-state").body();
         assertTrue(later.contains("\"unreadCount\":1"), later);
@@ -454,6 +493,61 @@ class ChatFlowTests {
         assertTrue(jonasPhone.get("/api/channels/" + channelId + "/read-state").body().contains("\"unreadCount\":0"));
         // Marking read twice is fine.
         assertEquals(204, jonasLaptop.post("/api/channels/" + channelId + "/read", null).statusCode());
+    }
+
+    @Test
+    void readingAnEmptyChatChangesNothingAndTheFirstMessageIsStillNew() throws Exception {
+        Person priya = person("Priya");
+        Person jonas = person("Jonas");
+        String tripId = createTrip(priya);
+        join(jonas, tripId, priya);
+        String channelId = channelOf(priya, tripId);
+
+        assertEquals(204, jonas.post("/api/channels/" + channelId + "/read", null).statusCode());
+        sendMessage(priya, channelId, "first!");
+
+        assertTrue(jonas.get("/api/channels/" + channelId + "/read-state").body().contains("\"unreadCount\":1"));
+    }
+
+    @Test
+    void twoDevicesMarkingAChatReadForTheFirstTimeAtTheSameMomentBothSucceed() throws Exception {
+        for (int round = 0; round < 5; round++) {
+            Person priya = person("Priya");
+            Person jonasLaptop = person("Jonas");
+            String tripId = createTrip(priya);
+            join(jonasLaptop, tripId, priya);
+            String channelId = channelOf(priya, tripId);
+            Person jonasPhone = jonasLaptop.anotherDevice();
+            sendMessage(priya, channelId, "hello");
+
+            List<Integer> statuses = together(List.of(
+                    () -> jonasLaptop.post("/api/channels/" + channelId + "/read", null).statusCode(),
+                    () -> jonasPhone.post("/api/channels/" + channelId + "/read", null).statusCode()));
+
+            assertEquals(List.of(204, 204), statuses);
+            assertTrue(jonasLaptop.get("/api/channels/" + channelId + "/read-state").body().contains("\"unreadCount\":0"));
+        }
+    }
+
+    @Test
+    void messagesSentAtTheSameMomentAllArriveInOneConsistentOrder() throws Exception {
+        Person priya = person("Priya");
+        Person jonas = person("Jonas");
+        String tripId = createTrip(priya);
+        join(jonas, tripId, priya);
+        String channelId = channelOf(priya, tripId);
+
+        List<Integer> statuses = together(List.of(
+                () -> sendMessage(priya, channelId, "p1").statusCode(),
+                () -> sendMessage(jonas, channelId, "j1").statusCode(),
+                () -> sendMessage(priya, channelId, "p2").statusCode(),
+                () -> sendMessage(jonas, channelId, "j2").statusCode()));
+
+        assertEquals(List.of(201, 201, 201, 201), statuses);
+        // Four messages, and each person is told about exactly the other's two: nothing lost, nothing counted twice.
+        assertEquals(4, ids(priya.get("/api/channels/" + channelId + "/messages").body()).size());
+        assertTrue(priya.get("/api/channels/" + channelId + "/read-state").body().contains("\"unreadCount\":2"));
+        assertTrue(jonas.get("/api/channels/" + channelId + "/read-state").body().contains("\"unreadCount\":2"));
     }
 
     /* Leaving */
@@ -591,5 +685,45 @@ class ChatFlowTests {
         assertEquals(401, nobody.openSocket().refusedWith());
         // A page on another site cannot borrow a visitor's cookie to listen in.
         assertEquals(403, priya.openSocket("http://evil.example").refusedWith());
+    }
+
+    @Test
+    void signingOutClosesTheSocketsOfThatSessionAndOnlyThose() throws Exception {
+        Person laptop = person("Priya");
+        Person phone = laptop.anotherDevice();
+        String channelId = channelOf(laptop, createTrip(laptop));
+        Socket laptopSocket = laptop.openSocket();
+        Socket phoneSocket = phone.openSocket();
+        laptopSocket.subscribe(channelId);
+        laptopSocket.next();
+        phoneSocket.subscribe(channelId);
+        phoneSocket.next();
+
+        assertEquals(204, laptop.post("/api/auth/logout", null).statusCode());
+
+        // The laptop's socket is closed by the server, with "policy violation" (1008).
+        assertEquals(1008, laptopSocket.closed.get(WAIT_SECONDS, TimeUnit.SECONDS).intValue());
+        // The phone is a different session, so it is still connected and still hears things.
+        phoneSocket.send("{\"type\":\"ping\"}");
+        assertEquals("{\"type\":\"pong\"}", phoneSocket.next());
+        assertFalse(phoneSocket.closed.isDone());
+    }
+
+    @Test
+    void aSocketThatIsClosedIsNoLongerToldAnything() throws Exception {
+        Person priya = person("Priya");
+        Person jonas = person("Jonas");
+        String tripId = createTrip(priya);
+        join(jonas, tripId, priya);
+        String channelId = channelOf(priya, tripId);
+        Socket jonasSocket = jonas.openSocket();
+        jonasSocket.subscribe(channelId);
+        jonasSocket.next();
+        jonas.post("/api/auth/logout", null);
+        jonasSocket.closed.get(WAIT_SECONDS, TimeUnit.SECONDS);
+
+        // Sending still works for everyone else, and the closed socket gets nothing.
+        assertEquals(201, sendMessage(priya, channelId, "after he signed out").statusCode());
+        jonasSocket.expectSilence();
     }
 }

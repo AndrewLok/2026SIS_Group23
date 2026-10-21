@@ -3,6 +3,7 @@ package com.voyager.backend.chat;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -64,7 +65,13 @@ public class ChatController {
 
     @PostMapping("/channels/{channelId}/read")
     public ResponseEntity<Void> markRead(@PathVariable UUID channelId, Authentication authentication) {
-        chat.markRead(channelId, CurrentUser.id(authentication));
+        UUID userId = CurrentUser.id(authentication);
+        try {
+            chat.markRead(channelId, userId);
+        } catch (DataIntegrityViolationException e) {
+            // Lost a race to create the marker for the first time; the winner's marker is there now.
+            chat.markRead(channelId, userId);
+        }
         return ResponseEntity.noContent().build();
     }
 }

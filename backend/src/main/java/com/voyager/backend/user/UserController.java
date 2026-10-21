@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.voyager.backend.common.ErrorResponse;
+import com.voyager.backend.common.Limits;
 import com.voyager.backend.user.requestdto.*;
 import com.voyager.backend.user.responsedto.UserResponse;
 
@@ -39,12 +40,18 @@ public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // A real hash of a password nobody has. Signing in with an email that has no account still checks
+    // against it, so that answer takes as long as a wrong password does and the timing cannot be used
+    // to find out who has an account.
+    private final String decoyHash;
+
     // Writes the signed-in user into the HTTP session, which is what the cookie points at.
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.decoyHash = passwordEncoder.encode("a password that no account has");
     }
 
     private static boolean isBlank(String value){
@@ -78,8 +85,16 @@ public class UserController {
         if (isBlank(request.displayName())){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.invalid("Enter the name your group will recognise."));
         }
+        String displayName = request.displayName().trim();
+        if (displayName.length() > Limits.DISPLAY_NAME){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.invalid(Limits.tooLong("name", Limits.DISPLAY_NAME)));
+        }
         if (isBlank(request.email()) || !request.email().contains("@")){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.invalid("That does not look like an email."));
+        }
+        String email = request.email().trim().toLowerCase();
+        if (email.length() > Limits.EMAIL){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.invalid(Limits.tooLong("email", Limits.EMAIL)));
         }
         if (request.password() == null || request.password().length() < MIN_PASSWORD_LENGTH){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.invalid("Use at least " + MIN_PASSWORD_LENGTH + " characters."));
@@ -88,14 +103,12 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.invalid("That password is too long. Use 72 bytes or fewer."));
         }
 
-        String email = request.email().trim().toLowerCase();
-
         if (userRepository.existsByEmailIgnoreCase(email)){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.conflict("There is already an account with that email."));
         }
 
         User user = new User(
-            request.displayName().trim(),
+            displayName,
             email,
             passwordEncoder.encode(request.password()),
             ThreadLocalRandom.current().nextInt(360)
@@ -103,10 +116,15 @@ public class UserController {
 
         User savedUser;
         try {
-            savedUser = userRepository.save(user);
+            savedUser = userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException e) {
             // Two sign-ups with the same email at the same moment: the database constraint decided it.
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.conflict("There is already an account with that email."));
+            // Only say "already an account" if that is really what happened; anything else is a fault
+            // and is left to the general handler rather than blamed on the person.
+            if (userRepository.existsByEmailIgnoreCase(email)){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.conflict("There is already an account with that email."));
+            }
+            throw e;
         }
 
         signIn(savedUser, httpRequest, httpResponse);
@@ -123,8 +141,10 @@ public class UserController {
                     .findByEmailIgnoreCase(request.email().trim().toLowerCase())
                     .orElse(null);
 
-        // The same answer for an unknown email and a wrong password, so this cannot be used to find out who has an account.
-        if(user == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())){
+        // The same answer, taking the same time, for an unknown email and a wrong password, so this cannot
+        // be used to find out who has an account.
+        boolean passwordMatches = passwordEncoder.matches(request.password(), user == null ? decoyHash : user.getPasswordHash());
+        if (user == null || !passwordMatches){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.invalidCredentials());
         }
 
@@ -140,7 +160,7 @@ public class UserController {
         return userRepository.findById(userId)
                 .<ResponseEntity<?>>map(user -> ResponseEntity.ok(UserResponse.from(user)))
                 // A valid session for an account that no longer exists is no session at all.
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.forbidden("Sign in to do that.")));
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.unauthenticated("Sign in to do that.")));
     }
 
     // Safe to call when already signed out, so the frontend never has to care.
