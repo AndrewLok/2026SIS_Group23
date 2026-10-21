@@ -115,6 +115,38 @@ export async function say(person: Person, text: string): Promise<void> {
   await expect(box).toHaveValue('')
 }
 
+/* Activities */
+
+/** An activity's title on the page. (The text also sits in the hidden label of its delete button.) */
+export const titled = (page: Page, title: string): Locator => page.getByRole('heading', { name: title })
+
+/** Open the trip's Activities screen and wait until it has loaded. */
+export async function openActivities(person: Person, tripPath: string): Promise<void> {
+  await person.page.goto(`${tripPath}/activities`)
+  await expect(person.page.getByRole('heading', { name: 'Activities' })).toBeVisible()
+}
+
+export const activityTab = (page: Page, name: 'Plan' | 'Voting' | 'Ruled out'): Locator =>
+  page.getByRole('tab', { name: new RegExp(`^${name}`) })
+
+/**
+ * Fill in the "Add an activity" drawer on the open Activities screen and submit it. Straight to the
+ * plan needs a time; putting it to a vote may have one or not.
+ */
+export async function addActivity(
+  person: Person,
+  title: string,
+  how: { vote: true; when?: string } | { vote?: false; when: string },
+): Promise<void> {
+  const { page } = person
+  await page.getByRole('button', { name: 'Add activity' }).click()
+  if (how.vote) await page.getByRole('radio', { name: 'Put it to a vote' }).click()
+  await page.getByLabel('What is it').fill(title)
+  if (how.when) await page.getByLabel('When').fill(how.when)
+  await page.getByRole('button', { name: how.vote ? 'Put it to a vote' : 'Add to the plan' }).click()
+  await expect(page.getByText(how.vote ? 'Put to a vote.' : 'Added to the plan.')).toBeVisible()
+}
+
 export async function closeAll(...people: Person[]): Promise<void> {
   await Promise.all(people.map((p) => p.context.close()))
 }

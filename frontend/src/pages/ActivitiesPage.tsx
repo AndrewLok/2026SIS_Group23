@@ -53,9 +53,14 @@ import {
 import { useCurrentUserId } from '@/hooks/useSession'
 import { agreeThreshold, isOnThePlan, needsADate, tally } from '@/lib/voting'
 import { formatDayTime } from '@/lib/dates'
+import { messageFor } from '@/lib/errors'
 import type { Idea, IdeaCategory, Profile, Vote } from '@/types'
 
 const categories: IdeaCategory[] = ['activity', 'food', 'stay', 'travel']
+
+// The length limits are the server's (backend common/Limits.java); the inputs stop typing at them.
+const TITLE_MAX = 100
+const DESCRIPTION_MAX = 2000
 
 const tabs = ['plan', 'voting', 'ruled-out'] as const
 type Tab = (typeof tabs)[number]
@@ -98,8 +103,12 @@ function DeleteButton({ idea, tripId }: { idea: Idea; tripId: string }) {
       size="icon"
       className="size-11 text-placard"
       onClick={async () => {
-        await remove.mutateAsync(idea.id)
-        toast.success('Activity deleted')
+        try {
+          await remove.mutateAsync(idea.id)
+          toast.success('Activity deleted')
+        } catch (error) {
+          toast.error(messageFor(error, 'Could not delete that. Try again.'))
+        }
       }}
     >
       <Trash2 size={14} aria-hidden="true" />
@@ -128,11 +137,13 @@ function PlanRow({
   profiles,
   userId,
   tripId,
+  isOwner,
 }: {
   idea: Idea
   profiles: Map<string, Profile>
   userId: string
   tripId: string
+  isOwner: boolean
 }) {
   const setAttending = useSetAttending(tripId, userId)
   const creator = profiles.get(idea.proposedBy)
@@ -142,7 +153,7 @@ function PlanRow({
   const toggle = () =>
     setAttending.mutate(
       { ideaId: idea.id, attending: !going },
-      { onError: () => toast.error('Could not update that. Try again.') },
+      { onError: (error) => toast.error(messageFor(error, 'Could not update that. Try again.')) },
     )
 
   return (
@@ -174,7 +185,7 @@ function PlanRow({
               : `${count} going`}
         </span>
         <div className="flex items-center gap-2">
-          {idea.proposedBy === userId ? <DeleteButton idea={idea} tripId={tripId} /> : null}
+          {idea.proposedBy === userId || isOwner ? <DeleteButton idea={idea} tripId={tripId} /> : null}
           {going ? (
             <Button variant="outline" size="sm" className="min-h-11" onClick={toggle}>
               I'm out
@@ -199,6 +210,7 @@ function VoteRow({
   memberCount,
   userId,
   tripId,
+  isOwner,
 }: {
   idea: Idea
   votes: Vote[]
@@ -206,6 +218,7 @@ function VoteRow({
   memberCount: number
   userId: string
   tripId: string
+  isOwner: boolean
 }) {
   const cast = useCastVote(tripId, userId)
   const t = tally(votes, idea.id, userId)
@@ -214,7 +227,10 @@ function VoteRow({
 
   const vote = (value: 1 | -1) => {
     // Tapping your own vote again clears it.
-    cast.mutate({ ideaId: idea.id, value: t.own === value ? null : value })
+    cast.mutate(
+      { ideaId: idea.id, value: t.own === value ? null : value },
+      { onError: (error) => toast.error(messageFor(error, 'Could not save that vote. Try again.')) },
+    )
   }
 
   return (
@@ -240,7 +256,7 @@ function VoteRow({
           {t.agree} of {threshold} needed
         </span>
         <div className="flex items-center gap-2">
-          {idea.proposedBy === userId ? <DeleteButton idea={idea} tripId={tripId} /> : null}
+          {idea.proposedBy === userId || isOwner ? <DeleteButton idea={idea} tripId={tripId} /> : null}
           <Button
             variant={t.own === -1 ? 'default' : 'outline'}
             size="sm"
@@ -337,8 +353,8 @@ function AddActivityDrawer({
       )
       setOpen(false)
       startOver()
-    } catch {
-      toast.error('Could not add that activity.')
+    } catch (error) {
+      toast.error(messageFor(error, 'Could not add that activity.'))
     }
   })
 
@@ -380,6 +396,7 @@ function AddActivityDrawer({
                 <Input
                   id={id}
                   placeholder="Kayak out to the seal colony"
+                  maxLength={TITLE_MAX}
                   aria-describedby={describedBy}
                   aria-invalid={invalid}
                   {...form.register('title')}
@@ -391,6 +408,7 @@ function AddActivityDrawer({
                 <Textarea
                   id={id}
                   rows={3}
+                  maxLength={DESCRIPTION_MAX}
                   placeholder="Two hours from Marengo. Needs at least four people to book."
                   {...form.register('description')}
                 />
@@ -487,7 +505,7 @@ export function ActivitiesPage() {
   const userId = useCurrentUserId()
   const ideas = useIdeas(tripId)
   const votes = useVotes(tripId)
-  const members = useMembers(tripId)
+  const members = useMembers(tripId, true)
 
   const profiles = React.useMemo(
     () => new Map((members.data ?? []).map((m) => [m.userId, m.profile])),
@@ -522,8 +540,10 @@ export function ActivitiesPage() {
   const open = all.filter((i) => i.status === 'voting')
   const rejected = all.filter((i) => i.status === 'rejected')
 
-  const planProps = { profiles, userId, tripId }
-  const voteProps = { votes: allVotes, profiles, memberCount, userId, tripId }
+  // The trip's owner can delete anyone's activity; everyone else only their own.
+  const isOwner = (members.data ?? []).some((m) => m.userId === userId && m.role === 'owner')
+  const planProps = { profiles, userId, tripId, isOwner }
+  const voteProps = { votes: allVotes, profiles, memberCount, userId, tripId, isOwner }
 
   return (
     <div className="flex flex-col gap-6">

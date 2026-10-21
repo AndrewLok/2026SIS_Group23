@@ -6,7 +6,7 @@ fast: **what are we doing next**, and **what do I owe**.
 | Folder | What it is |
 |---|---|
 | `frontend/` | Vite, React and TypeScript. Runs on its own against an in-browser mock, or against the backend. See `frontend/README.md`. |
-| `backend/` | Spring Boot (Java 25). Accounts, trips and members, and group chat so far. |
+| `backend/` | Spring Boot (Java 25). Accounts, trips and members, group chat, activities with their votes, and the trip calendar as a file so far. |
 
 ## Try it
 
@@ -37,7 +37,7 @@ forgets every account and trip.
 
 | Command | Where | What it covers |
 |---|---|---|
-| `./gradlew test` | `backend/` | The real server on a random port, driven over HTTP and WebSocket: sign-up and sign-in, who may do what on a trip, chat, and a few "two requests at the same moment" cases. |
+| `./gradlew test` | `backend/` | The real server on a random port, driven over HTTP and WebSocket: sign-up and sign-in, who may do what on a trip, chat, activities and votes, and a few "two requests at the same moment" cases. |
 | `npm test` | `frontend/` | The maths, the mock services, and the HTTP clients against a stubbed `fetch`. |
 | `npm run e2e` | `frontend/` | A real browser through the real app and the real backend. Needs `npx playwright install chromium` once. |
 
@@ -58,8 +58,25 @@ forgets every account and trip.
   noon on that day, on the clock of whoever picked it. That keeps the day the same for the picker
   wherever they are, and for anyone within twelve hours of them. A group spread across the world
   (Sydney and Los Angeles, say) can still see a day's difference at the edges.
-- Text has length limits (names 60 characters, trip name and destination 100, message 2000). The
-  forms stop you at the limit, and the server refuses anything longer with a message.
+- **Activities** are either added straight to the plan (with a time and the people going) or put to
+  the group. More than half of the people on the trip carry a vote, and the server, not the screen,
+  moves an activity between "voting" and "agreed" every time a vote changes or someone leaves.
+  Everyone who agreed is marked as going at the moment it is carried; after that being in or out
+  is each person's own call. Only the person who added one, or the trip owner, can change or
+  delete it. Other people's changes reach an open screen within 5 seconds (it looks again; there
+  is no socket for this).
+- **The trip calendar can leave the app** as an `.ics` file: a one-off download, or a link a
+  calendar app subscribes to. The calendar is not stored; the file is built each time from the
+  activities that are going ahead and have a start time. A calendar app cannot send the login
+  cookie, so each person has their own secret link (256 random bits, kept as plain text so the
+  screen can show it again) that can only read. It stops working when they leave the trip, and
+  "Make a new link" replaces it. Times are written in UTC and every calendar app shows them in the
+  viewer's own zone; an all-day activity is written as a plain date, taken from the UTC date of its
+  start. Calendar apps decide how often to check (Google can take many hours), so it is not live.
+  The link is in the address, so it can end up in server and proxy logs.
+- Text has length limits (names 60 characters, trip name, destination and activity title 100,
+  activity notes and chat messages 2000). The forms stop you at the limit, and the server refuses
+  anything longer with a message.
 
 ## Before this goes anywhere public
 
@@ -74,4 +91,4 @@ These are known and deliberate for now:
 - **CSRF tokens are off.** The session cookie is SameSite=Lax and every change needs a JSON body,
   which covers a browser. Revisit before serving it from a different site than the frontend.
 - **Turn on `server.servlet.session.cookie.secure`** once it is served over HTTPS.
-- Ideas, votes, expenses, fuel and bookings are still mock-only on the frontend.
+- Expenses, fuel and bookings are still mock-only on the frontend.

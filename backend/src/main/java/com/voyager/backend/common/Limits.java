@@ -13,6 +13,8 @@ public final class Limits {
     public static final int EMAIL = 254;        // The longest an email address can be.
     public static final int TRIP_NAME = 100;
     public static final int DESTINATION = 100;
+    public static final int IDEA_TITLE = 100;
+    public static final int IDEA_DESCRIPTION = 2000;
 
     // "That name is too long. Keep it to 60 characters or fewer."
     public static String tooLong(String what, int max) {

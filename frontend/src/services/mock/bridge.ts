@@ -1,7 +1,7 @@
 /*
  * TEMPORARY BRIDGE, for as long as part of the app is real and part is still mock.
  *
- * The mock services (ideas, votes, expenses, fuel, bookings) find "who is signed in" and
+ * The mock services (expenses, fuel, bookings) find "who is signed in" and
  * "who is on this trip" in the local store, and they key everything by trip id. While sign-in,
  * trips and members come from the backend, each real response is mirrored in here so those mock
  * screens keep working on real trips, with real people, without knowing the difference.

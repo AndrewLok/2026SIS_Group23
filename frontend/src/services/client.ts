@@ -11,15 +11,20 @@
  *
  * VITE_USE_MOCK=false means "use the real backend wherever one exists". So far
  * that is sign-in (src/services/http/auth.ts), trips with their members
- * (src/services/http/trips.ts) and chat (src/services/http/chat.ts); everything
- * else below keeps running on the mock layer until its backend side is built.
+ * (src/services/http/trips.ts), chat (src/services/http/chat.ts) and activities with
+ * their votes (src/services/http/ideas.ts and votes.ts), and the calendar file and subscription link
+ * (src/services/http/calendar.ts, which has no mock side); everything else below
+ * keeps running on the mock layer until its backend side is built.
  * Move one module at a time from mockX to httpX as each lands. While the two are mixed, services/mock/bridge.ts mirrors
  * what the backend says into the mock store so the mock screens still work.
  */
 
 import * as httpAuth from '@/services/http/auth'
+import * as httpCalendar from '@/services/http/calendar'
 import * as httpChat from '@/services/http/chat'
+import * as httpIdeas from '@/services/http/ideas'
 import * as httpTrips from '@/services/http/trips'
+import * as httpVotes from '@/services/http/votes'
 import * as mockAuth from '@/services/mock/auth'
 import * as mockBookings from '@/services/mock/bookings'
 import * as mockChat from '@/services/mock/chat'
@@ -37,13 +42,27 @@ const useMock = import.meta.env.VITE_USE_MOCK !== 'false'
 export const features = {
   /** The seeded demo account lives only in the mock store, so it needs the mock auth. */
   demoSignIn: useMock,
+  /**
+   * Other people change activities and votes while a screen is open, and only a real backend has
+   * other people, so only then are they read again every few seconds.
+   */
+  sharedActivities: !useMock,
+  /** The calendar file and subscription link are built by the server from the shared activities. */
+  calendarExport: !useMock,
 }
+
+const needsBackend = (what: string) => (): Promise<never> =>
+  Promise.reject(new ApiError('forbidden', `${what} needs the real backend.`))
 
 const auth = useMock ? mockAuth : httpAuth
 // Trips and members move together: who is on a trip is what the rest of the app counts.
 const trips = useMock ? mockTrips : httpTrips
 // Chat is its own module: who is on the trip decides who may read it, and the backend enforces that.
 const chat = useMock ? mockChat : httpChat
+// Activities and their votes move together: the votes decide which tab an activity is in, and the
+// head count they are counted against is the trip's members.
+const ideas = useMock ? mockIdeas : httpIdeas
+const votes = useMock ? mockVotes : httpVotes
 
 export const api = {
   auth: {
@@ -73,17 +92,22 @@ export const api = {
     updateRole: trips.updateRole,
   },
   ideas: {
-    list: mockIdeas.list,
-    create: mockIdeas.create,
-    update: mockIdeas.update,
-    setStatus: mockIdeas.setStatus,
-    setAttending: mockIdeas.setAttending,
-    remove: mockIdeas.remove,
+    list: ideas.list,
+    create: ideas.create,
+    update: ideas.update,
+    setStatus: ideas.setStatus,
+    setAttending: ideas.setAttending,
+    remove: ideas.remove,
   },
   votes: {
-    listForTrip: mockVotes.listForTrip,
-    cast: mockVotes.cast,
-    clear: mockVotes.clear,
+    listForTrip: votes.listForTrip,
+    cast: votes.cast,
+    clear: votes.clear,
+  },
+  calendar: {
+    feedPath: useMock ? needsBackend('The calendar link') : httpCalendar.feedPath,
+    renewFeed: useMock ? needsBackend('The calendar link') : httpCalendar.renewFeed,
+    download: useMock ? needsBackend('Downloading the calendar') : httpCalendar.download,
   },
   bookings: {
     list: mockBookings.list,

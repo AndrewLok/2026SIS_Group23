@@ -10,7 +10,7 @@
 import * as React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult } from '@tanstack/react-query'
-import { api } from '@/services/client'
+import { api, features } from '@/services/client'
 import type { NewBooking } from '@/services/mock/bookings'
 import type { NewExpense } from '@/services/mock/expenses'
 import type { NewFuelLeg } from '@/services/mock/fuel'
@@ -33,6 +33,7 @@ export const keys = {
   members: (tripId: string) => ['trips', tripId, 'members'] as const,
   ideas: (tripId: string) => ['trips', tripId, 'ideas'] as const,
   votes: (tripId: string) => ['trips', tripId, 'votes'] as const,
+  calendarFeed: (tripId: string) => ['trips', tripId, 'calendarFeed'] as const,
   bookings: (tripId: string) => ['trips', tripId, 'bookings'] as const,
   fuel: (tripId: string) => ['trips', tripId, 'fuel'] as const,
   expenses: (tripId: string) => ['trips', tripId, 'expenses'] as const,
@@ -56,13 +57,28 @@ function invalidateTrip(client: ReturnType<typeof useQueryClient>, tripId: strin
 
 /* Trips and members */
 
+/**
+ * How often an open screen looks again, when other people can change activities and votes under it.
+ * It pauses while the tab is hidden. (Chat has a live nudge from the server; this is the plain version.)
+ */
+export const SHARED_REFRESH_MS = 5_000
+const sharedRefresh = () => (features.sharedActivities ? SHARED_REFRESH_MS : false)
+
 export const useTrips = () => useQuery({ queryKey: keys.trips, queryFn: api.trips.list })
 
 export const useTrip = (tripId: string) =>
   useQuery({ queryKey: keys.trip(tripId), queryFn: () => api.trips.get(tripId) })
 
-export const useMembers = (tripId: string) =>
-  useQuery({ queryKey: keys.members(tripId), queryFn: () => api.members.list(tripId) })
+/**
+ * `live` is for a screen whose numbers depend on who is on the trip right now (the votes needed to
+ * carry an activity), so it looks again every few seconds while open. See sharedRefresh.
+ */
+export const useMembers = (tripId: string, live = false) =>
+  useQuery({
+    queryKey: keys.members(tripId),
+    queryFn: () => api.members.list(tripId),
+    refetchInterval: live ? sharedRefresh() : false,
+  })
 
 export function useCreateTrip() {
   const client = useQueryClient()
@@ -114,13 +130,47 @@ export function useUpdateRole(tripId: string) {
   })
 }
 
+/* The calendar as a file */
+
+/**
+ * The person's subscription link (a path on the server). Fetched only when the share panel is open,
+ * because asking for it makes one the first time. It does not change unless they renew it.
+ */
+export const useCalendarFeed = (tripId: string, enabled: boolean) =>
+  useQuery({
+    queryKey: keys.calendarFeed(tripId),
+    queryFn: () => api.calendar.feedPath(tripId),
+    enabled,
+    staleTime: Infinity,
+  })
+
+export function useRenewCalendarFeed(tripId: string) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.calendar.renewFeed(tripId),
+    onSuccess: (path) => client.setQueryData(keys.calendarFeed(tripId), path),
+  })
+}
+
+export function useDownloadCalendar(tripId: string) {
+  return useMutation({ mutationFn: () => api.calendar.download(tripId) })
+}
+
 /* Ideas and votes */
 
 export const useIdeas = (tripId: string) =>
-  useQuery({ queryKey: keys.ideas(tripId), queryFn: () => api.ideas.list(tripId) })
+  useQuery({
+    queryKey: keys.ideas(tripId),
+    queryFn: () => api.ideas.list(tripId),
+    refetchInterval: sharedRefresh(),
+  })
 
 export const useVotes = (tripId: string) =>
-  useQuery({ queryKey: keys.votes(tripId), queryFn: () => api.votes.listForTrip(tripId) })
+  useQuery({
+    queryKey: keys.votes(tripId),
+    queryFn: () => api.votes.listForTrip(tripId),
+    refetchInterval: sharedRefresh(),
+  })
 
 export function useCreateIdea(tripId: string) {
   const client = useQueryClient()

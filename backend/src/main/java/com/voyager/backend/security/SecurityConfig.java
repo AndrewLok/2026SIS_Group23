@@ -2,6 +2,7 @@ package com.voyager.backend.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,6 +30,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
                 .requestMatchers("/error").permitAll() // Otherwise a bad request is reported as a 401.
+                // A calendar app subscribing to a trip's calendar cannot send the login cookie. The token
+                // in the address is its key (see CalendarService), and it is read-only, so GET (and HEAD) only.
+                .requestMatchers(HttpMethod.GET, "/api/calendar/feeds/*").permitAll()
+                .requestMatchers(HttpMethod.HEAD, "/api/calendar/feeds/*").permitAll()
                 .anyRequest().authenticated())
             // Not signed in is a plain 401 for the frontend to act on, never a redirect to a login page.
             .exceptionHandling(errors -> errors

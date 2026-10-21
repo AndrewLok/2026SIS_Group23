@@ -11,4 +11,5 @@ public interface TripMemberRepository extends JpaRepository<TripMember, UUID> {
     List<TripMember> findByUserId(UUID userId);
     Optional<TripMember> findByTripIdAndUserId(UUID tripId, UUID userId);
     long countByTripIdAndRole(UUID tripId, Role role);
+    long countByTripId(UUID tripId);
 }

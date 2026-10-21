@@ -15,6 +15,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.voyager.backend.activities.IdeaService;
+import com.voyager.backend.calendar.CalendarService;
 import com.voyager.backend.chat.ChatService;
 import com.voyager.backend.common.ApiException;
 import com.voyager.backend.common.Limits;
@@ -31,6 +33,7 @@ import com.voyager.backend.user.UserRepository;
 //   - Any member can change the shared settings (privateDebts, allowance, fuel defaults), because
 //     the frontend lets everyone flip those, and can leave on their own.
 //   - A trip always keeps at least one owner.
+//   - Leaving (or being removed) also takes the person's votes and "going" off the trip's activities.
 //
 // Methods that change data are transactional, so a rejected request leaves nothing half done.
 // Anything that changes who is on a trip first locks the trip's row (lockTrip), so two requests at
@@ -58,13 +61,17 @@ public class TripService {
     private final TripMemberRepository memberRepository;
     private final UserRepository userRepository;
     private final ChatService chatService;
+    private final IdeaService ideaService;
+    private final CalendarService calendarService;
 
     public TripService(TripRepository tripRepository, TripMemberRepository memberRepository, UserRepository userRepository,
-            ChatService chatService) {
+            ChatService chatService, IdeaService ideaService, CalendarService calendarService) {
         this.tripRepository = tripRepository;
         this.memberRepository = memberRepository;
         this.userRepository = userRepository;
         this.chatService = chatService;
+        this.ideaService = ideaService;
+        this.calendarService = calendarService;
     }
 
     /* Looking things up */
@@ -369,6 +376,11 @@ public class TripService {
             throw ApiException.forbidden(NO_OWNER_MESSAGE);
         }
         memberRepository.delete(target);
+        // Their votes and "going" leave with them, and what is still being decided is counted again
+        // against the smaller group. The flush makes the head count it uses already exclude them.
+        memberRepository.flush();
+        ideaService.memberLeft(tripId, targetId);
+        calendarService.memberLeft(tripId, targetId);
     }
 
     @Transactional

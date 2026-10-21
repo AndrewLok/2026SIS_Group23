@@ -36,7 +36,7 @@ const isApiCode = (value: unknown): value is ApiError['code'] =>
 export const UNAVAILABLE_MESSAGE = 'Could not reach the server. Check your connection and try again.'
 export const UNEXPECTED_MESSAGE = 'The server sent something unexpected. Try again in a moment.'
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE'
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 /** Send a request. Throws only when the network fails; a 4xx or 5xx comes back as a Response. */
 export async function send(

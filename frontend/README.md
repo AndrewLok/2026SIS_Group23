@@ -27,7 +27,7 @@ seeded member of a trip with five people, so every screen has real-looking data 
 Everything in the app is fabricated demo data. No person, booking, reference or figure
 in it corresponds to anything real.
 
-### With the real backend (sign-in, trips, members and chat so far)
+### With the real backend (sign-in, trips, members, chat, activities and votes so far)
 
 ```bash
 # terminal 1, in ../backend (listens on 8080)
@@ -55,12 +55,30 @@ messages reach other people's screens through one WebSocket (`/ws/chat`, proxied
 reconnects with a growing delay, and if it cannot connect at all the screens check every
 5 seconds instead, so chat still arrives, only slower (`services/http/liveChat.ts`).
 
+Activities and votes are real too (`/api/trips/{id}/ideas`, `/api/ideas/*`). The server counts the
+votes and moves an activity between the Plan and Voting tabs: more than half of the people on the
+trip carry it, and everyone who agreed is marked as going the moment it is carried. Only the person
+who added an activity, or the trip owner, can change or delete it; anyone on the trip can vote and
+say they are in or out. Someone who leaves the trip takes their votes with them, and what is still
+open is counted again against the smaller group. Other people's votes appear by the Activities
+screen looking again every 5 seconds while it is open (there is no live socket for this one), so
+two people on the screen see each other's changes within a few seconds.
+
+The calendar can be taken out of the app (Calendar screen, "Add to my calendar"): a link for Google,
+Apple or Outlook to subscribe to, which keeps up as plans change, and a `.ics` download for a
+one-off copy. The server builds both from the activities going ahead (`/api/trips/{id}/calendar.ics`,
+`/api/trips/{id}/calendar/feed`, and the open `/api/calendar/feeds/{token}.ics` a calendar app reads
+with no login). There is no mock version, so the button only shows with a real backend
+(`features.calendarExport`). The link needs an address that is online: a calendar app's servers cannot
+reach `localhost`, and the panel says so when it sees one. Bookings are not in the file yet, because
+they have no backend.
+
 If the server stops recognising you (the session ran out, or you signed out somewhere else), the
 next request comes back 401, which the app treats as `unauthenticated` rather than `forbidden`. One
 handler in `services/queryClient.ts` then clears what was loaded and sends you to the sign-in screen
 with a note, and signing in again returns you to where you were.
 
-Ideas, votes, expenses, fuel and bookings still run on the mock layer until their
+Expenses, fuel and bookings still run on the mock layer until their
 backend side is built, which means that data lives in your browser only and is not shared
 between people or devices. Those screens read the mock store, so a temporary bridge
 (`services/mock/bridge.ts`) mirrors your account, the real trips and their members into it
@@ -72,9 +90,12 @@ row only, so on a real trip they do not persist across reloads until fuel has a 
 ### End to end tests
 
 These drive a real browser through the real app and the real Spring backend: sign-up and
-sign-in, creating a trip, joining by invite link, regenerating the code, leaving, and group
+sign-in, creating a trip, joining by invite link, regenerating the code, leaving, group
 chat (a message reaching the other person's open screen live, the unread count, the "New"
-divider), and what happens when things go wrong: the session ending under you, a refused request,
+divider), activities (a vote on one screen carrying an activity onto the plan on another,
+voting for and against, saying you are in or out, who sees a delete button, someone leaving mid-vote),
+the members screen (who is offered Remove and Leave, removing someone and letting them back in),
+the calendar and the overview's next-up sign and Vote lamp, taking the calendar out (the subscription link read with no login, a new link replacing it, the download), and what happens when things go wrong: the session ending under you, a refused request,
 over-long text, a browser in another time zone (`e2e/resilience.e2e.ts`). Each person in a test
 has their own browser context, so their own cookie, like separate phones.
 
@@ -94,11 +115,13 @@ read ECONNRESET` or `write EPIPE` lines while the chat tests run; that is only a
 closing its chat connection abruptly, and is harmless.
 
 The files are `e2e/*.e2e.ts`. The `.e2e.ts` name keeps `npm run test` (Vitest) from picking
-them up. The detailed permission rules belong in the backend's `TripFlowTests` and
-`ChatFlowTests`; the e2e tests cover journeys across two people's screens. The live chat checks
+them up. The detailed permission rules belong in the backend's `TripFlowTests`, `ChatFlowTests`
+and `IdeaFlowTests`; the e2e tests cover journeys across two people's screens. The live chat checks
 wait only 3 seconds, less than the 5 second polling fallback, so they pass only when the
-socket really delivers. Ideas, expenses and the other screens
-that still run on the mock layer are deliberately not covered yet.
+socket really delivers. The activities checks wait up to 12 seconds, because they rely on that
+polling. Expenses, fuel and bookings still run on the mock layer and are deliberately not covered
+yet. Trip renaming, role changes and ruling out or editing an activity have no screen yet, so
+only the backend tests cover them.
 
 ## How it is put together
 
@@ -134,8 +157,9 @@ Four rules hold throughout:
 ## Wiring a real backend
 
 `src/services/client.ts` is the only file that has to change. Rewrite the modules behind
-it keeping the same method signatures, and no screen is touched. Sign-in and trips are done:
-`services/http/auth.ts` and `services/http/trips.ts` replace their mock twins when
+it keeping the same method signatures, and no screen is touched. Sign-in, trips, chat,
+activities and votes are done: `services/http/auth.ts`, `trips.ts`, `chat.ts`, `ideas.ts` and
+`votes.ts` replace their mock twins when
 `VITE_USE_MOCK=false`, and `services/http/request.ts` is the shared fetch wrapper that turns
 every failure into an `ApiError`. Move the other modules over one at a time the same way.
 
@@ -152,8 +176,8 @@ Still to sort out, entity by entity:
 
 - Money is integer cents on both sides (the backend trip's budget is `budgetCapCents`).
   Never let a float into the app.
-- Ideas, votes, expenses, fuel legs and bookings do not exist server side yet. Those
-  endpoints are a conversation, not a swap.
+- Expenses, fuel legs and bookings do not exist server side yet. Those endpoints are a
+  conversation, not a swap.
 
 Keep the mock layer in the repo behind `VITE_USE_MOCK`. It is what makes the app
 demoable when the backend is on someone else's branch and not running.

@@ -25,8 +25,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { PageHeader, Placard, SpecRow } from '@/components/common/chrome'
+import { ShareCalendar } from '@/components/calendar/ShareCalendar'
 import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
 import { useBookings, useIdeas } from '@/hooks/queries'
+import { features } from '@/services/client'
 import { sourceColor, sourceLabel, toCalendarItems } from '@/lib/calendar'
 import type { CalendarItem } from '@/lib/calendar'
 import { dayKey, formatDay, formatDayTime, formatTime } from '@/lib/dates'
@@ -239,12 +241,15 @@ export function CalendarPage() {
         title="Calendar"
         subtitle="Activities and bookings, in one list. Nothing here is stored twice."
         action={
-          <Button asChild variant="outline" size="sm">
-            <Link to={`/trips/${tripId}/bookings`}>
-              <Plane size={14} aria-hidden="true" />
-              Bookings
-            </Link>
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            {features.calendarExport ? <ShareCalendar tripId={tripId} /> : null}
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/trips/${tripId}/bookings`}>
+                <Plane size={14} aria-hidden="true" />
+                Bookings
+              </Link>
+            </Button>
+          </div>
         }
       />
 
