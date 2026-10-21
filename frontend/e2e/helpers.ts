@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test'
-import type { Browser, BrowserContext, Locator, Page } from '@playwright/test'
+import type { Browser, BrowserContext, BrowserContextOptions, Locator, Page } from '@playwright/test'
 
 /*
  * Shared steps for the end-to-end tests.
@@ -46,9 +46,16 @@ export async function fillSignUp(page: Page, name: string, email: string, passwo
   await page.getByRole('button', { name: 'Create account' }).click()
 }
 
-/** A new person with their own browser, signed up and sitting on their (empty) trip list. */
-export async function newPerson(browser: Browser, name: string): Promise<Person> {
-  const context = await browser.newContext()
+/**
+ * A new person with their own browser, signed up and sitting on their (empty) trip list. The
+ * options are for a browser that differs from the default, such as one in another time zone.
+ */
+export async function newPerson(
+  browser: Browser,
+  name: string,
+  options: BrowserContextOptions = {},
+): Promise<Person> {
+  const context = await browser.newContext(options)
   const page = await context.newPage()
   const email = uniqueEmail(name)
   await fillSignUp(page, name, email)

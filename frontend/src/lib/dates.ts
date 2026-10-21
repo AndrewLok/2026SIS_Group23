@@ -1,5 +1,6 @@
 /*
- * Dates. Stored as ISO strings in UTC, formatted only at render.
+ * Dates. Stored as ISO strings in UTC, formatted only at render. A date that is just a day
+ * (a trip's start, when an expense was spent) is stored as noon on that day: see dayToIso.
  * date-fns does the work; this file is the vocabulary the app uses.
  */
 
@@ -9,7 +10,9 @@ import {
   isSameDay,
   isSameMonth,
   isSameYear,
+  isValid,
   parseISO,
+  set,
   startOfDay,
 } from 'date-fns'
 
@@ -18,6 +21,25 @@ export const nowIso = (): string => new Date().toISOString()
 export const toIso = (date: Date): string => date.toISOString()
 
 export const fromIso = (iso: string): Date => parseISO(iso)
+
+/**
+ * Today as the person sees it, "2026-11-08", for a date input's default. Not
+ * `new Date().toISOString().slice(0, 10)`, which is today in UTC and so, for anyone
+ * whose clock is ahead of or behind UTC, is the wrong day for part of every day.
+ */
+export const todayAsDay = (): string => format(new Date(), 'yyyy-MM-dd')
+
+/**
+ * A calendar day picked in a date input ("2026-11-08") as the instant we store: noon on that day on
+ * the picker's own clock. Not `new Date(day).toISOString()`, which reads the day as midnight UTC and
+ * so shows up as the day before for anyone west of UTC. Noon is as far from either midnight as it
+ * gets, so the same day shows for the picker and for anyone within twelve hours of them.
+ */
+export function dayToIso(day: string): string {
+  const date = parseISO(day)
+  if (!isValid(date)) throw new Error(`Not a calendar day: "${day}"`)
+  return set(date, { hours: 12, minutes: 0, seconds: 0, milliseconds: 0 }).toISOString()
+}
 
 /** "Fri 14 Mar" */
 export const formatDay = (iso: string): string => format(parseISO(iso), 'EEE d MMM')

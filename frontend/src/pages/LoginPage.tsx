@@ -14,14 +14,26 @@ import { ApiError } from '@/types'
 
 // Both modes carry the same fields so one resolver type covers the form; sign up
 // simply asks more of two of them.
+// The length limits are the server's (backend common/Limits.java); the inputs stop typing at them.
+const NAME_MAX = 60
+const EMAIL_MAX = 254
+
 const signInSchema = z.object({
   displayName: z.string(),
-  email: z.string().min(1, 'Enter your email.').email('That does not look like an email.'),
+  email: z
+    .string()
+    .min(1, 'Enter your email.')
+    .max(EMAIL_MAX, `Use ${EMAIL_MAX} characters or fewer.`)
+    .email('That does not look like an email.'),
   password: z.string().min(1, 'Enter your password.'),
 })
 
 const signUpSchema = signInSchema.extend({
-  displayName: z.string().min(1, 'Enter the name your group will recognise.'),
+  displayName: z
+    .string()
+    .trim()
+    .min(1, 'Enter the name your group will recognise.')
+    .max(NAME_MAX, `Use ${NAME_MAX} characters or fewer.`),
   password: z.string().min(6, 'Use at least six characters.'),
 })
 
@@ -83,6 +95,12 @@ export function LoginPage() {
           </p>
         </div>
 
+        {session.sessionEnded ? (
+          <p role="status" className="plate mb-4 p-4 text-sm text-caution">
+            Your session ended, so you have been signed out. Sign in again to carry on where you were.
+          </p>
+        ) : null}
+
         <form onSubmit={submit} className="plate flex flex-col gap-5 p-5" noValidate>
           {mode === 'signUp' ? (
             <Field label="Display name" error={form.formState.errors.displayName?.message} required>
@@ -90,6 +108,7 @@ export function LoginPage() {
                 <Input
                   id={id}
                   autoComplete="name"
+                  maxLength={NAME_MAX}
                   aria-describedby={describedBy}
                   aria-invalid={invalid}
                   {...form.register('displayName')}
@@ -104,6 +123,7 @@ export function LoginPage() {
                 id={id}
                 type="email"
                 autoComplete="email"
+                maxLength={EMAIL_MAX}
                 aria-describedby={describedBy}
                 aria-invalid={invalid}
                 {...form.register('email')}

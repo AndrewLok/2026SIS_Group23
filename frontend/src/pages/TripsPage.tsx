@@ -21,12 +21,21 @@ import { EmptyState, ListSkeleton, QueryBoundary } from '@/components/common/sta
 import { PageHeader, Placard } from '@/components/common/chrome'
 import { useCreateTrip, useJoinByCode, useTrips } from '@/hooks/queries'
 import { useSession } from '@/hooks/useSession'
-import { daysUntil, formatDateRange } from '@/lib/dates'
+import { daysUntil, dayToIso, formatDateRange } from '@/lib/dates'
+import { messageFor } from '@/lib/errors'
 import type { Trip } from '@/types'
 
+// The length limits are the server's (backend common/Limits.java); the inputs stop typing at them.
+const NAME_MAX = 100
+const DESTINATION_MAX = 100
+
 const newTripSchema = z.object({
-  name: z.string().min(1, 'Give the trip a name.'),
-  destination: z.string(),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Give the trip a name.')
+    .max(NAME_MAX, `Use ${NAME_MAX} characters or fewer.`),
+  destination: z.string().max(DESTINATION_MAX, `Use ${DESTINATION_MAX} characters or fewer.`),
   startDate: z.string(),
   endDate: z.string(),
 })
@@ -45,15 +54,16 @@ function NewTripDialog() {
       const trip = await create.mutateAsync({
         name: values.name,
         destination: values.destination,
-        startDate: values.startDate ? new Date(values.startDate).toISOString() : null,
-        endDate: values.endDate ? new Date(values.endDate).toISOString() : null,
+        startDate: values.startDate ? dayToIso(values.startDate) : null,
+        endDate: values.endDate ? dayToIso(values.endDate) : null,
       })
       toast.success(`${trip.name} created. Invite code ${trip.inviteCode}.`)
       setOpen(false)
       form.reset()
       navigate(`/trips/${trip.id}`)
-    } catch {
-      toast.error('Could not create that trip.')
+    } catch (error) {
+      // The server words its refusals to be read ("The trip cannot end before it starts."), so show them.
+      toast.error(messageFor(error, 'Could not create that trip.'))
     }
   })
 
@@ -78,6 +88,7 @@ function NewTripDialog() {
               <Input
                 id={id}
                 placeholder="Great Ocean Road"
+                maxLength={NAME_MAX}
                 aria-describedby={describedBy}
                 aria-invalid={invalid}
                 {...form.register('name')}
@@ -86,7 +97,12 @@ function NewTripDialog() {
           </Field>
           <Field label="Destination">
             {({ id }) => (
-              <Input id={id} placeholder="Victoria, Australia" {...form.register('destination')} />
+              <Input
+                id={id}
+                placeholder="Victoria, Australia"
+                maxLength={DESTINATION_MAX}
+                {...form.register('destination')}
+              />
             )}
           </Field>
           <div className="grid grid-cols-2 gap-4">
@@ -127,8 +143,8 @@ function JoinByCodeDialog() {
       setOpen(false)
       setCode('')
       navigate(`/trips/${trip.id}`)
-    } catch {
-      setError('That code does not match a trip.')
+    } catch (error) {
+      setError(messageFor(error, 'That code does not match a trip.'))
     }
   }
 

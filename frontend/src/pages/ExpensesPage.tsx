@@ -62,7 +62,8 @@ import {
   transfersInvolving,
 } from '@/lib/balances'
 import { estimateTrip, spendProgress } from '@/lib/estimate'
-import { dayKey, formatDay, isUnderway } from '@/lib/dates'
+import { dayKey, dayToIso, formatDay, isUnderway, todayAsDay } from '@/lib/dates'
+import { messageFor } from '@/lib/errors'
 import { formatMoney, splitEvenly } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import type { Expense, ExpenseCategory, ExpenseSplit, Profile } from '@/types'
@@ -103,7 +104,7 @@ function AddExpenseDrawer({
       description: '',
       category: 'food',
       paidBy: userId,
-      spentAt: new Date().toISOString().slice(0, 10),
+      spentAt: todayAsDay(),
     },
   })
 
@@ -180,7 +181,7 @@ function AddExpenseDrawer({
         description: values.description,
         amountCents,
         paidBy: values.paidBy,
-        spentAt: new Date(values.spentAt).toISOString(),
+        spentAt: dayToIso(values.spentAt),
         category: values.category,
         split,
       })
@@ -579,7 +580,12 @@ export function ExpensesPage() {
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <Switch
               checked={privateDebts}
-              onCheckedChange={(checked) => updateTrip.mutate({ privateDebts: checked })}
+              onCheckedChange={(checked) =>
+                updateTrip.mutate(
+                  { privateDebts: checked },
+                  { onError: (error) => toast.error(messageFor(error, 'Could not change that setting.')) },
+                )
+              }
             />
             Only show debts that involve me
           </label>

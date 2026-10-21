@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { useParams } from 'react-router-dom'
 import { Loader2, MessagesSquare, SendHorizontal } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { MemberAvatar } from '@/components/common/people'
@@ -16,7 +17,11 @@ import {
 import { useCurrentUserId } from '@/hooks/useSession'
 import { api } from '@/services/client'
 import { dayKey, formatDay, formatTime } from '@/lib/dates'
+import { messageFor } from '@/lib/errors'
 import type { Message, Profile } from '@/types'
+
+/** The server's limit on one message (backend ChatService.MAX_BODY_LENGTH). The box stops typing here. */
+const MESSAGE_MAX = 2000
 
 /**
  * Multiple channels ship later. The list is built now behind this flag so adding
@@ -129,8 +134,11 @@ export function ChatPage() {
     setDraft('')
     try {
       await send.mutateAsync(body)
-    } catch {
-      setDraft(body)
+    } catch (error) {
+      // Say why, in the server's words when it has some ("That message is too long..."), and put
+      // the text back so nothing typed is lost. If more has been typed since, the old text goes first.
+      toast.error(messageFor(error, 'Could not send that. Your message is still in the box.'))
+      setDraft((current) => (current ? `${body}\n${current}` : body))
     }
   }
 
@@ -180,7 +188,7 @@ export function ChatPage() {
                       <p
                         key={message.id}
                         className={[
-                          'max-w-[46ch] rounded-md px-3 py-2 text-sm',
+                          'max-w-[46ch] rounded-md px-3 py-2 text-sm break-words whitespace-pre-wrap',
                           mine
                             ? 'bg-bezel text-foreground'
                             : 'border border-bezel bg-face text-foreground',
@@ -213,6 +221,7 @@ export function ChatPage() {
             }
           }}
           rows={1}
+          maxLength={MESSAGE_MAX}
           placeholder="Message the group"
           className="max-h-32 min-h-10 flex-1 resize-none"
           aria-label="Message"

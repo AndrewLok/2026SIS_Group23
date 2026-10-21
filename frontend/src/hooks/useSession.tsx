@@ -7,12 +7,15 @@ import * as React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { api } from '@/services/client'
+import { onSessionEnded } from '@/services/sessionEnded'
 import { ApiError } from '@/types'
 import type { Profile } from '@/types'
 
 type SessionValue = {
   user: Profile | null
   loading: boolean
+  /** True after the server ended the session under a signed-in person, until they sign in again. */
+  sessionEnded: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (displayName: string, email: string, password: string) => Promise<void>
   signInAsDemo: () => Promise<void>
@@ -24,7 +27,29 @@ const SessionContext = React.createContext<SessionValue | null>(null)
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<Profile | null>(null)
   const [loading, setLoading] = React.useState(true)
+  const [sessionEnded, setSessionEnded] = React.useState(false)
   const queryClient = useQueryClient()
+
+  // The listener below must see who is signed in now, not who was when it was set up.
+  const signedIn = React.useRef(false)
+  React.useEffect(() => {
+    signedIn.current = user !== null
+  }, [user])
+
+  // The server stopped recognising this login (it ran out, or it was ended on another device).
+  // Forget the person and everything fetched for them; the route guard then shows the sign-in
+  // screen, which says why, and sends them back to where they were after they sign in again.
+  React.useEffect(
+    () =>
+      onSessionEnded(() => {
+        if (!signedIn.current) return
+        signedIn.current = false
+        setUser(null)
+        setSessionEnded(true)
+        queryClient.clear()
+      }),
+    [queryClient],
+  )
 
   React.useEffect(() => {
     let cancelled = false
@@ -48,16 +73,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       loading,
+      sessionEnded,
       signIn: async (email, password) => {
         setUser(await api.auth.signIn(email, password))
+        setSessionEnded(false)
         await queryClient.invalidateQueries()
       },
       signUp: async (displayName, email, password) => {
         setUser(await api.auth.signUp(displayName, email, password))
+        setSessionEnded(false)
         await queryClient.invalidateQueries()
       },
       signInAsDemo: async () => {
         setUser(await api.auth.signInAsDemo())
+        setSessionEnded(false)
         await queryClient.invalidateQueries()
       },
       signOut: async () => {
@@ -74,7 +103,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         queryClient.clear()
       },
     }),
-    [user, loading, queryClient],
+    [user, loading, sessionEnded, queryClient],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

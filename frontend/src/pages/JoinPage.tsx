@@ -8,6 +8,7 @@ import { AvatarStack } from '@/components/common/people'
 import { useSession } from '@/hooks/useSession'
 import { useJoinByCode } from '@/hooks/queries'
 import { api } from '@/services/client'
+import { messageFor } from '@/lib/errors'
 
 export function JoinPage() {
   const { code = '' } = useParams<{ code: string }>()
@@ -33,8 +34,8 @@ export function JoinPage() {
       const trip = await join.mutateAsync(code)
       toast.success(`You are on ${trip.name}`)
       navigate(`/trips/${trip.id}`, { replace: true })
-    } catch {
-      toast.error('Could not join that trip.')
+    } catch (error) {
+      toast.error(messageFor(error, 'Could not join that trip.'))
     } finally {
       setJoining(false)
     }

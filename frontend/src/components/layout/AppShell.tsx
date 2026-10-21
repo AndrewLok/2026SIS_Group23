@@ -42,10 +42,18 @@ export function RequireAuth() {
   return <Outlet />
 }
 
-/** Keeps a signed-in member out of /login. */
+/**
+ * Keeps a signed-in member out of /login. Someone who has just signed in is sent on to where they
+ * were headed (RequireAuth leaves that in the location state), which matters because this guard
+ * and the sign-in form's own redirect both react to the same sign-in and must agree on where.
+ */
 export function RedirectIfAuthed() {
   const { user, loading } = useSession()
+  const location = useLocation()
   if (loading) return <SessionPending />
-  if (user) return <Navigate to="/trips" replace />
+  if (user) {
+    const from = (location.state as { from?: string } | null)?.from
+    return <Navigate to={from ?? '/trips'} replace />
+  }
   return <Outlet />
 }

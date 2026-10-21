@@ -30,6 +30,7 @@ import { useCurrentUserId } from '@/hooks/useSession'
 
 import { formatMoney, splitEvenly } from '@/lib/money'
 import { formatDayLong } from '@/lib/dates'
+import { messageFor } from '@/lib/errors'
 import { totalSpent } from '@/lib/balances'
 
 function CopyButton({ value, label }: { value: string; label: string }) {
@@ -108,8 +109,12 @@ export function MembersPage() {
               className="text-placard"
               disabled={regenerate.isPending}
               onClick={async () => {
-                await regenerate.mutateAsync()
-                toast.success('New code generated. The old one stops working.')
+                try {
+                  await regenerate.mutateAsync()
+                  toast.success('New code generated. The old one stops working.')
+                } catch (error) {
+                  toast.error(messageFor(error, 'Could not make a new code.'))
+                }
               }}
             >
               <RefreshCw size={14} aria-hidden="true" />
@@ -160,17 +165,25 @@ export function MembersPage() {
                         currentSplit={currentSplit()}
                         nextSplit={splitAfterRemoval()}
                         onConfirm={async () => {
-                          await removeMember.mutateAsync(member.userId)
-                          toast.success(`${member.profile.displayName} removed. Splits updated.`)
+                          try {
+                            await removeMember.mutateAsync(member.userId)
+                            toast.success(`${member.profile.displayName} removed. Splits updated.`)
+                          } catch (error) {
+                            toast.error(messageFor(error, `Could not remove ${member.profile.displayName}.`))
+                          }
                         }}
                       />
                     ) : null}
                     {isSelf && !isOwner ? (
                       <LeaveTripDialog
                         onConfirm={async () => {
-                          await removeMember.mutateAsync(userId)
-                          toast.success('You have left the trip.')
-                          navigate('/trips', { replace: true })
+                          try {
+                            await removeMember.mutateAsync(userId)
+                            toast.success('You have left the trip.')
+                            navigate('/trips', { replace: true })
+                          } catch (error) {
+                            toast.error(messageFor(error, 'Could not leave the trip.'))
+                          }
                         }}
                       />
                     ) : null}

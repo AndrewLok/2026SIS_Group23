@@ -55,6 +55,11 @@ messages reach other people's screens through one WebSocket (`/ws/chat`, proxied
 reconnects with a growing delay, and if it cannot connect at all the screens check every
 5 seconds instead, so chat still arrives, only slower (`services/http/liveChat.ts`).
 
+If the server stops recognising you (the session ran out, or you signed out somewhere else), the
+next request comes back 401, which the app treats as `unauthenticated` rather than `forbidden`. One
+handler in `services/queryClient.ts` then clears what was loaded and sends you to the sign-in screen
+with a note, and signing in again returns you to where you were.
+
 Ideas, votes, expenses, fuel and bookings still run on the mock layer until their
 backend side is built, which means that data lives in your browser only and is not shared
 between people or devices. Those screens read the mock store, so a temporary bridge
@@ -69,8 +74,9 @@ row only, so on a real trip they do not persist across reloads until fuel has a 
 These drive a real browser through the real app and the real Spring backend: sign-up and
 sign-in, creating a trip, joining by invite link, regenerating the code, leaving, and group
 chat (a message reaching the other person's open screen live, the unread count, the "New"
-divider). Each person in a test has their own browser context, so their own cookie, like
-separate phones.
+divider), and what happens when things go wrong: the session ending under you, a refused request,
+over-long text, a browser in another time zone (`e2e/resilience.e2e.ts`). Each person in a test
+has their own browser context, so their own cookie, like separate phones.
 
 ```bash
 npx playwright install chromium   # once, about 150 MB
@@ -84,8 +90,8 @@ you already have open on 5173 can never be tested by mistake. The first run is s
 Gradle compiles. If a backend is already running on 8080 it is reused; the tests sign up
 fresh accounts, so leftover data does not matter. Failed runs leave a screenshot and a trace
 in `test-results/` (`npx playwright show-trace <trace.zip>`). Vite may print `ws proxy error:
-read ECONNRESET` lines while the chat tests run; that is only a test browser closing its chat
-connection abruptly, and is harmless.
+read ECONNRESET` or `write EPIPE` lines while the chat tests run; that is only a test browser
+closing its chat connection abruptly, and is harmless.
 
 The files are `e2e/*.e2e.ts`. The `.e2e.ts` name keeps `npm run test` (Vitest) from picking
 them up. The detailed permission rules belong in the backend's `TripFlowTests` and
@@ -121,7 +127,9 @@ Four rules hold throughout:
 2. **Every derived number is a pure function in `src/lib`** with no React in it, so the
    maths can be tested without rendering anything.
 3. **Money is integer cents, never a float.** One `formatMoney()` helper.
-4. **Dates are ISO strings in UTC**, formatted only at render.
+4. **Dates are ISO strings in UTC**, formatted only at render. A date that is only a day (a trip's
+   start, when an expense was spent) is stored as noon on that day, on the picker's own clock, by
+   `dayToIso()`, so it shows as the same day for them and for anyone within twelve hours.
 
 ## Wiring a real backend
 

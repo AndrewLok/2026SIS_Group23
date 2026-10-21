@@ -16,6 +16,7 @@ const CODES: ReadonlyArray<ApiError['code']> = [
   'invalid_credentials',
   'conflict',
   'forbidden',
+  'unauthenticated',
   'invalid',
   'unavailable',
 ]
@@ -73,7 +74,8 @@ export async function errorFrom(response: Response): Promise<ApiError> {
     case 400:
       return new ApiError('invalid', 'That was not accepted. Check it and try again.')
     case 401:
-      return new ApiError('forbidden', 'Sign in to do that.')
+      // An empty 401 is the server not knowing who you are (a wrong password comes with its own body).
+      return new ApiError('unauthenticated', 'Sign in to do that.')
     case 403:
       return new ApiError('forbidden', 'You are not allowed to do that.')
     case 404:

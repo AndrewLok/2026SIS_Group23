@@ -394,7 +394,18 @@ export const toMessage = (r: MessageRow): Message => ({
 
 /** Thrown by every service method so callers branch on a code, not a string. */
 export class ApiError extends Error {
-  code: 'not_found' | 'invalid_credentials' | 'conflict' | 'forbidden' | 'invalid' | 'unavailable'
+  /**
+   * `unauthenticated` is "the server does not know who you are" (never signed in, or the session
+   * ended), and is how the app tells it apart from `forbidden`, "signed in but not allowed".
+   */
+  code:
+    | 'not_found'
+    | 'invalid_credentials'
+    | 'conflict'
+    | 'forbidden'
+    | 'unauthenticated'
+    | 'invalid'
+    | 'unavailable'
 
   constructor(code: ApiError['code'], message: string) {
     super(message)
