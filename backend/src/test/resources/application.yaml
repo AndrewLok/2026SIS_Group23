@@ -1,0 +1,7 @@
+# Tests never touch Supabase. This file stands in for the main application.yaml on the test
+# classpath, so the .env import and its credentials are never read.
+spring:
+  application:
+    name: voyager-backend
+  profiles:
+    active: h2

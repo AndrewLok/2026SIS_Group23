@@ -28,10 +28,10 @@ import {
   useIdeas,
   useMembers,
   useTrip,
+  useUnreadCount,
   useVotes,
 } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
-import { api } from '@/services/client'
 import { computeBalances, totalSpent } from '@/lib/balances'
 import { nextUp, toCalendarItems } from '@/lib/calendar'
 import { estimateTrip } from '@/lib/estimate'
@@ -88,6 +88,7 @@ export function TripOverviewPage() {
   const expenses = useExpenses(tripId)
   const channels = useChannels(tripId)
   const votes = useVotes(tripId)
+  const unreadCount = useUnreadCount(channels.data?.[0]?.id, userId)
 
   const pending =
     trip.isPending ||
@@ -145,8 +146,7 @@ export function TripOverviewPage() {
     (i) =>
       i.status === 'voting' && !allVotes.some((v) => v.ideaId === i.id && v.userId === userId),
   ).length
-  const channelId = channels.data?.[0]?.id
-  const unread = channelId ? api.chat.unreadCount(channelId, userId) : 0
+  const unread = unreadCount.data ?? 0
   const unpriced = estimate.inputs.bookingsWithoutCost
 
   const meter = tripMeterReading(trip.data.startDate, trip.data.endDate)

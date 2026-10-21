@@ -10,6 +10,11 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 5173,
+    // Only used in backend mode (npm run dev:backend). Proxying keeps the API on the same
+    // origin as the app, so the backend's session cookie needs no CORS set-up.
+    proxy: {
+      '/api': 'http://127.0.0.1:8080',
+    },
   },
   resolve: {
     alias: {

@@ -1,0 +1,23 @@
+# Offline mode: an in-memory database that starts empty and reseeds on every run, with no
+# Supabase needed. Run with: gradlew bootRun --args="--spring.profiles.active=h2"
+# The tests use this profile too (see src/test/resources/application.yaml).
+spring:
+  datasource:
+    url: jdbc:h2:mem:voyagerdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+voyager:
+  demo:
+    seed: true
+    # Safe here: the data is throwaway.
+    reset-enabled: true

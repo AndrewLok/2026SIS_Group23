@@ -57,22 +57,35 @@ Four rules hold throughout:
 
 ## Wiring a real backend
 
-`src/services/client.ts` is the only file that has to change. Rewrite the modules behind
-it keeping the same method signatures, and no screen is touched.
+The Spring backend in `/backend` implements every operation the mock does, with the same
+rules, so the app runs against it unchanged. `src/services/client.ts` picks the
+implementation; `src/services/http` is the HTTP one, typed against the mock so a signature
+drifting on either side fails the build.
 
-Things to sort out with whoever owns the backend branch first:
+To run against the backend (needs JDK 25):
 
-- Their ids are `Long`. Keep ids as strings here and convert in the mapper.
-- They use `BigDecimal` for money. Parse to integer cents on the way in and send decimal
-  strings on the way out. Never let a float into the app.
-- `AuthController` is a stub. Ask whether it will issue a session cookie or a JWT before
-  writing `useSession` against it.
-- Ideas, votes, expenses, fuel legs and bookings do not exist server side yet. Those
-  endpoints are a conversation, not a swap.
-- Their `Trip` has no name, no invite code and no members. This app needs all three.
+```sh
+cp backend/.env.example backend/.env     # then fill in the three SUPABASE_ values
+cd backend && ./gradlew bootRun          # http://127.0.0.1:8080, on Supabase Postgres
+cd frontend && npm run dev:backend       # Vite proxies /api to the backend
+```
 
-Keep the mock layer in the repo behind `VITE_USE_MOCK`. It is what makes the app
-demoable when the backend is on someone else's branch and not running.
+- The database is Supabase Postgres. Credentials go in `backend/.env`, which git ignores;
+  `backend/.env.example` says where each one is in the Supabase dashboard. The backend
+  refuses to start while they are blank.
+- Tables live in their own `voyager` schema, created on first start, so Supabase's REST API
+  (which exposes `public`) never serves the users table. Data persists between restarts.
+- The demo trip is seeded the first time the database has no users. Every seeded account's
+  password is `roadtrip`; set `VOYAGER_SEED_DEMO=false` in `.env` to skip it.
+- No Supabase to hand? `./gradlew bootRun --args="--spring.profiles.active=h2"` runs on
+  throwaway in-memory H2 instead, reseeded every start, with `POST /api/demo/reset` enabled.
+  That endpoint is off against Supabase, since it wipes every table. The tests always use H2.
+- Sign-in is a server session (the `JSESSIONID` cookie). The proxy keeps it same-origin.
+- The backend speaks the app's camelCase shapes, ids are strings, money is integer cents
+  and timestamps are written exactly as `toISOString()` writes them.
+- Chat is polled every few seconds; no socket set-up is needed.
+
+`npm run dev` still uses the mock layer, so the app stays demoable with no backend running.
 
 ## Design
 
