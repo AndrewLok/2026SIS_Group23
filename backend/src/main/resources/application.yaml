@@ -1,21 +1,39 @@
 spring:
   application:
     name: voyager-backend
+  config:
+    # Credentials live in backend/.env, which git ignores (copy .env.example to start).
+    # Real environment variables win over the file, so a deployment can skip it entirely.
+    import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:h2:mem:voyagerdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USER}
+    password: ${SUPABASE_DB_PASSWORD}
+    # With a blank URL, Spring Boot would quietly fall back to in-memory H2 (it is on the
+    # classpath for the h2 profile) and every restart would lose the data. Refuse to start instead.
+    embedded-database-connection: none
+    hikari:
+      # Supabase's session pooler caps connections per project; leave room for teammates.
+      maximum-pool-size: ${DB_POOL_SIZE:5}
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create
+      # update keeps data between restarts. Never "create" here: it drops every table on start.
+      ddl-auto: ${DB_DDL_AUTO:update}
+    properties:
+      hibernate:
+        # Our own schema, not "public": Supabase exposes public over its REST API to anyone
+        # holding the anon key, and the users table holds password hashes.
+        default_schema: ${DB_SCHEMA:voyager}
+        hbm2ddl.create_namespaces: true
     show-sql: false
     open-in-view: false
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+
+voyager:
+  demo:
+    # Puts the demo trip in when the database has no users yet, so "try the demo" works.
+    seed: ${VOYAGER_SEED_DEMO:true}
+    # POST /api/demo/reset wipes every table. Only the local h2 profile turns it on.
+    reset-enabled: false
 
 server:
   port: 8080

@@ -2,12 +2,17 @@ package com.voyager.backend.demo;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.voyager.backend.user.UserRepository;
 
-/** The database is in memory, so every start begins empty: put the demo trip back. */
+/**
+ * Puts the demo trip in when the database has no users. In memory that is every start; on
+ * Supabase it is only the first, after which the data is kept. Off with voyager.demo.seed=false.
+ */
 @Component
+@ConditionalOnProperty(name = "voyager.demo.seed", havingValue = "true", matchIfMissing = true)
 public class DemoSeeder implements ApplicationRunner {
 
     private final DemoData demoData;

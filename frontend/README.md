@@ -65,13 +65,22 @@ drifting on either side fails the build.
 To run against the backend (needs JDK 25):
 
 ```sh
-cd backend && ./gradlew bootRun          # http://127.0.0.1:8080, seeded with the demo trip
+cp backend/.env.example backend/.env     # then fill in the three SUPABASE_ values
+cd backend && ./gradlew bootRun          # http://127.0.0.1:8080, on Supabase Postgres
 cd frontend && npm run dev:backend       # Vite proxies /api to the backend
 ```
 
+- The database is Supabase Postgres. Credentials go in `backend/.env`, which git ignores;
+  `backend/.env.example` says where each one is in the Supabase dashboard. The backend
+  refuses to start while they are blank.
+- Tables live in their own `voyager` schema, created on first start, so Supabase's REST API
+  (which exposes `public`) never serves the users table. Data persists between restarts.
+- The demo trip is seeded the first time the database has no users. Every seeded account's
+  password is `roadtrip`; set `VOYAGER_SEED_DEMO=false` in `.env` to skip it.
+- No Supabase to hand? `./gradlew bootRun --args="--spring.profiles.active=h2"` runs on
+  throwaway in-memory H2 instead, reseeded every start, with `POST /api/demo/reset` enabled.
+  That endpoint is off against Supabase, since it wipes every table. The tests always use H2.
 - Sign-in is a server session (the `JSESSIONID` cookie). The proxy keeps it same-origin.
-- The database is in-memory H2: every backend restart, or `POST /api/demo/reset`, puts the
-  demo trip back. Every seeded account's password is `roadtrip`.
 - The backend speaks the app's camelCase shapes, ids are strings, money is integer cents
   and timestamps are written exactly as `toISOString()` writes them.
 - Chat is polled every few seconds; no socket set-up is needed.
