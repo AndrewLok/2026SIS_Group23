@@ -20,11 +20,79 @@ seeded member of a trip with five people, so every screen has real-looking data 
 |---|---|
 | `npm run dev` | Dev server on 127.0.0.1:5173 |
 | `npm run build` | Typecheck and production build |
-| `npm run test` | Vitest, covering the money maths |
+| `npm run test` | Vitest: the maths, the mock services, and the HTTP clients against a stubbed `fetch` |
+| `npm run e2e` | Playwright end to end tests against the real backend (see below) |
 | `npm run lint` | oxlint |
 
 Everything in the app is fabricated demo data. No person, booking, reference or figure
 in it corresponds to anything real.
+
+### With the real backend (sign-in, trips, members and chat so far)
+
+```bash
+# terminal 1, in ../backend (listens on 8080)
+./gradlew bootRun
+
+# terminal 2, in this folder
+cp .env.example .env.local      # sets VITE_USE_MOCK=false
+npm run dev
+```
+
+Sign-in, sign-up and sign-out then go to the Spring backend (`/api/auth/*`), which keeps you
+logged in with a session cookie. Vite proxies `/api` to `127.0.0.1:8080`, so the cookie is
+same-origin and no CORS setup is needed. The demo button is hidden in this mode, because the
+demo account only exists in the mock store.
+
+Trips and their members (create, edit, invite code, join, leave, remove, roles) then go to
+`/api/trips/*` too, so they are shared between people and devices. Only the owner can change
+a trip's name, dates or currency, make a new invite code, remove others or change roles; any
+member can change the shared settings (private debts, allowance, fuel defaults) or leave.
+
+Group chat is real too. Messages go over `/api/channels/*`, and what each person has read is
+kept on the server, so the unread count and the "New" divider follow you between devices. New
+messages reach other people's screens through one WebSocket (`/ws/chat`, proxied by Vite like
+`/api`) that only says "something new here"; the screen then fetches. If the socket drops it
+reconnects with a growing delay, and if it cannot connect at all the screens check every
+5 seconds instead, so chat still arrives, only slower (`services/http/liveChat.ts`).
+
+Ideas, votes, expenses, fuel and bookings still run on the mock layer until their
+backend side is built, which means that data lives in your browser only and is not shared
+between people or devices. Those screens read the mock store, so a temporary bridge
+(`services/mock/bridge.ts`) mirrors your account, the real trips and their members into it
+whenever they are fetched. It goes away as each of those modules moves to `services/http`.
+
+Known gap: fuel's "remembered defaults" are saved by the mock fuel service onto the mock trip
+row only, so on a real trip they do not persist across reloads until fuel has a backend.
+
+### End to end tests
+
+These drive a real browser through the real app and the real Spring backend: sign-up and
+sign-in, creating a trip, joining by invite link, regenerating the code, leaving, and group
+chat (a message reaching the other person's open screen live, the unread count, the "New"
+divider). Each person in a test has their own browser context, so their own cookie, like
+separate phones.
+
+```bash
+npx playwright install chromium   # once, about 150 MB
+npm run e2e
+```
+
+Playwright starts everything itself and stops it afterwards: the backend with
+`./gradlew bootRun` in `../backend` (port 8080, in-memory database, so every run starts
+empty) and a separate Vite on port **5174** with `VITE_USE_MOCK=false`, so a dev server
+you already have open on 5173 can never be tested by mistake. The first run is slow while
+Gradle compiles. If a backend is already running on 8080 it is reused; the tests sign up
+fresh accounts, so leftover data does not matter. Failed runs leave a screenshot and a trace
+in `test-results/` (`npx playwright show-trace <trace.zip>`). Vite may print `ws proxy error:
+read ECONNRESET` lines while the chat tests run; that is only a test browser closing its chat
+connection abruptly, and is harmless.
+
+The files are `e2e/*.e2e.ts`. The `.e2e.ts` name keeps `npm run test` (Vitest) from picking
+them up. The detailed permission rules belong in the backend's `TripFlowTests` and
+`ChatFlowTests`; the e2e tests cover journeys across two people's screens. The live chat checks
+wait only 3 seconds, less than the 5 second polling fallback, so they pass only when the
+socket really delivers. Ideas, expenses and the other screens
+that still run on the mock layer are deliberately not covered yet.
 
 ## How it is put together
 
@@ -58,18 +126,26 @@ Four rules hold throughout:
 ## Wiring a real backend
 
 `src/services/client.ts` is the only file that has to change. Rewrite the modules behind
-it keeping the same method signatures, and no screen is touched.
+it keeping the same method signatures, and no screen is touched. Sign-in and trips are done:
+`services/http/auth.ts` and `services/http/trips.ts` replace their mock twins when
+`VITE_USE_MOCK=false`, and `services/http/request.ts` is the shared fetch wrapper that turns
+every failure into an `ApiError`. Move the other modules over one at a time the same way.
 
-Things to sort out with whoever owns the backend branch first:
+Decided so far:
 
-- Their ids are `Long`. Keep ids as strings here and convert in the mapper.
-- They use `BigDecimal` for money. Parse to integer cents on the way in and send decimal
-  strings on the way out. Never let a float into the app.
-- `AuthController` is a stub. Ask whether it will issue a session cookie or a JWT before
-  writing `useSession` against it.
+- **Auth is a session cookie**, not a JWT. Nothing is stored client side; the browser sends
+  the cookie itself.
+- The backend answers in camelCase in exactly the shape of the types here, with errors as
+  `{ code, message }` using the `ApiError` codes, so the mappers for it are checks, not
+  conversions.
+- Backend ids are UUIDs. They arrive as strings, which is what this app already uses.
+
+Still to sort out, entity by entity:
+
+- Money is integer cents on both sides (the backend trip's budget is `budgetCapCents`).
+  Never let a float into the app.
 - Ideas, votes, expenses, fuel legs and bookings do not exist server side yet. Those
   endpoints are a conversation, not a swap.
-- Their `Trip` has no name, no invite code and no members. This app needs all three.
 
 Keep the mock layer in the repo behind `VITE_USE_MOCK`. It is what makes the app
 demoable when the backend is on someone else's branch and not running.

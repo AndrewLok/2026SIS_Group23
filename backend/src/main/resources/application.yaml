@@ -1,3 +1,13 @@
+server:
+  servlet:
+    session:
+      timeout: 14d
+      cookie:
+        http-only: true   # JavaScript on the page cannot read the login cookie.
+        same-site: lax    # Not sent on cross-site POSTs. This is what stands in for CSRF tokens.
+        max-age: 14d      # Survives closing the browser, so a phone stays signed in for the whole trip.
+        # secure: true    # Turn on once this is served over HTTPS; it has to stay off for http://localhost.
+
 spring:
   application:
     name: voyager-backend
@@ -7,7 +17,7 @@ spring:
     username: sa
     password: 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    open-in-view: false   # Queries belong in services, not in view rendering. Also silences a startup warning.
     hibernate:
       ddl-auto: update
     show-sql: true

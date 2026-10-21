@@ -5,7 +5,9 @@
 
 import * as React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { api } from '@/services/client'
+import { ApiError } from '@/types'
 import type { Profile } from '@/types'
 
 type SessionValue = {
@@ -31,6 +33,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       .then((profile) => {
         if (!cancelled) setUser(profile)
       })
+      // If the server cannot be reached, the sign-in screen is where the person lands,
+      // and signing in will say what is wrong.
+      .catch(() => undefined)
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
@@ -56,7 +61,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         await queryClient.invalidateQueries()
       },
       signOut: async () => {
-        await api.auth.signOut()
+        try {
+          await api.auth.signOut()
+        } catch (error) {
+          // The login cookie is still live on the server, so staying signed in is the honest state.
+          toast.error(
+            error instanceof ApiError ? error.message : 'Could not sign out. Try again in a moment.',
+          )
+          return
+        }
         setUser(null)
         queryClient.clear()
       },

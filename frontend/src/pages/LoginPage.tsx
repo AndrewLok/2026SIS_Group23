@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Field } from '@/components/common/Field'
 import { useSession } from '@/hooks/useSession'
+import { features } from '@/services/client'
 import { ApiError } from '@/types'
 
 // Both modes carry the same fields so one resolver type covers the form; sign up
@@ -141,21 +142,25 @@ export function LoginPage() {
             {mode === 'signIn' ? 'Sign in' : 'Create account'}
           </Button>
 
-          <div className="flex items-center gap-3">
-            <Separator className="flex-1" />
-            <span className="placard text-xs">or</span>
-            <Separator className="flex-1" />
-          </div>
+          {features.demoSignIn ? (
+            <>
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="placard text-xs">or</span>
+                <Separator className="flex-1" />
+              </div>
 
-          <Button type="button" variant="outline" onClick={() => void tryDemo()} disabled={busy}>
-            {demoPending ? (
-              <Loader2 size={15} className="animate-spin" aria-hidden="true" />
-            ) : null}
-            Try the demo trip
-          </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Opens a seeded trip with five members. Everything in it is made up.
-          </p>
+              <Button type="button" variant="outline" onClick={() => void tryDemo()} disabled={busy}>
+                {demoPending ? (
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                ) : null}
+                Try the demo trip
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                Opens a seeded trip with five members. Everything in it is made up.
+              </p>
+            </>
+          ) : null}
         </form>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">

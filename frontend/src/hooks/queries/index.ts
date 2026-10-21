@@ -7,6 +7,7 @@
  * easier to see when it is all in front of you.
  */
 
+import * as React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult } from '@tanstack/react-query'
 import { api } from '@/services/client'
@@ -37,6 +38,7 @@ export const keys = {
   expenses: (tripId: string) => ['trips', tripId, 'expenses'] as const,
   channels: (tripId: string) => ['trips', tripId, 'channels'] as const,
   messages: (channelId: string) => ['channels', channelId, 'messages'] as const,
+  readState: (channelId: string) => ['channels', channelId, 'readState'] as const,
 }
 
 /** Everything on a trip that a balance or a count can depend on. */
@@ -312,6 +314,39 @@ export const useMessages = (channelId: string | undefined) =>
     queryFn: () => api.chat.listMessages(channelId as string),
     enabled: Boolean(channelId),
   })
+
+/** How many messages are unread, and where the "New" divider goes. */
+export const useChatReadState = (channelId: string | undefined) =>
+  useQuery({
+    queryKey: keys.readState(channelId ?? 'none'),
+    queryFn: () => api.chat.readState(channelId as string),
+    enabled: Boolean(channelId),
+  })
+
+/**
+ * Keeps a channel's messages and unread count fresh while a screen that shows them is open: the
+ * connection says "look again" and these two are refetched. Many screens can use it at once.
+ */
+export function useChatLive(channelId: string | undefined) {
+  const client = useQueryClient()
+  React.useEffect(() => {
+    if (!channelId) return
+    return api.chat.subscribe(channelId, () => {
+      void client.invalidateQueries({ queryKey: keys.messages(channelId) })
+      void client.invalidateQueries({ queryKey: keys.readState(channelId) })
+    })
+  }, [channelId, client])
+}
+
+/** Says "I have seen everything up to now", and refreshes the unread count everywhere it shows. */
+export function useMarkChatRead(channelId: string | undefined) {
+  const client = useQueryClient()
+  return React.useCallback(async () => {
+    if (!channelId) return
+    await api.chat.markRead(channelId)
+    await client.invalidateQueries({ queryKey: keys.readState(channelId) })
+  }, [channelId, client])
+}
 
 export function useSendMessage(channelId: string) {
   const client = useQueryClient()

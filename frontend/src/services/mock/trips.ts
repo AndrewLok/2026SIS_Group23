@@ -1,6 +1,6 @@
 import { inviteCode, latency, read, uid, write } from '@/services/mock/db'
 import { ApiError, toProfile, toTrip, toTripMember } from '@/types'
-import type { Profile, Role, Trip, TripMember } from '@/types'
+import type { Profile, Role, Trip, TripMember, TripPreview } from '@/types'
 
 export type NewTrip = {
   name: string
@@ -89,7 +89,7 @@ export async function update(tripId: string, patch: Partial<Trip>): Promise<Trip
 /** Look up a trip by invite code without joining it, for the join preview. */
 export async function previewByCode(
   code: string,
-): Promise<{ trip: Trip; members: Profile[] }> {
+): Promise<{ trip: TripPreview; members: Profile[] }> {
   await latency()
   const db = read()
   const row = db.trips.find((t) => t.invite_code === code.trim().toUpperCase())

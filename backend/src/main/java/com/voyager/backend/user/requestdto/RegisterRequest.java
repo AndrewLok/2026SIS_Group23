@@ -1,8 +1,7 @@
 package com.voyager.backend.user.requestdto;
 
 public record RegisterRequest(
-    String firstName,
-    String lastName,
+    String displayName,
     String email,
     String password
 ) {}

@@ -45,6 +45,12 @@ export type Trip = {
   privateDebts: boolean
 }
 
+/**
+ * What someone holding an invite code may see before joining: enough to recognise the trip.
+ * Money and settings are not part of it.
+ */
+export type TripPreview = Pick<Trip, 'id' | 'name' | 'destination' | 'startDate' | 'endDate'>
+
 export type TripMember = {
   tripId: string
   userId: string
@@ -143,6 +149,13 @@ export type Message = {
   authorId: string
   body: string
   createdAt: string
+}
+
+/** What the signed-in member has not seen in a channel. */
+export type ChatReadState = {
+  unreadCount: number
+  /** The message the "New" divider goes above; null when nothing is unread. */
+  firstUnreadId: string | null
 }
 
 /* Rows as the store holds them. */
@@ -381,7 +394,7 @@ export const toMessage = (r: MessageRow): Message => ({
 
 /** Thrown by every service method so callers branch on a code, not a string. */
 export class ApiError extends Error {
-  code: 'not_found' | 'invalid_credentials' | 'conflict' | 'forbidden' | 'invalid'
+  code: 'not_found' | 'invalid_credentials' | 'conflict' | 'forbidden' | 'invalid' | 'unavailable'
 
   constructor(code: ApiError['code'], message: string) {
     super(message)

@@ -31,3 +31,7 @@ dist-ssr
 *.sln
 *.sw?
 .impeccable/chrome-profile/
+
+# Playwright output (traces and screenshots of failed end-to-end runs)
+test-results/
+playwright-report/

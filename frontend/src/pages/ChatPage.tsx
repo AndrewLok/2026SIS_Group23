@@ -5,7 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { MemberAvatar } from '@/components/common/people'
 import { EmptyState, ListSkeleton, ScreenError, anyFailed } from '@/components/common/state'
-import { useChannels, useMembers, useMessages, useSendMessage } from '@/hooks/queries'
+import {
+  useChannels,
+  useChatLive,
+  useMarkChatRead,
+  useMembers,
+  useMessages,
+  useSendMessage,
+} from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
 import { api } from '@/services/client'
 import { dayKey, formatDay, formatTime } from '@/lib/dates'
@@ -59,34 +66,52 @@ export function ChatPage() {
   const [draft, setDraft] = React.useState('')
   const bottomRef = React.useRef<HTMLDivElement>(null)
 
-  /*
-   * Where the divider goes is read once, on arrival, and held in a ref: opening
-   * the screen marks the channel read, so re-deriving it later would always come
-   * back empty and the divider would vanish while you were still looking at it.
-   */
-  const dividerId = React.useRef<string | null | undefined>(undefined)
-  const markedRead = React.useRef(false)
-
   const profiles = React.useMemo(
     () => new Map((members.data ?? []).map((m) => [m.userId, m.profile])),
     [members.data],
   )
 
-  if (channelId && dividerId.current === undefined) {
-    dividerId.current = api.chat.firstUnreadId(channelId, userId)
-  }
+  useChatLive(channelId)
+  const markRead = useMarkChatRead(channelId)
 
+  /*
+   * Where the divider goes is read once, on arrival, and held in state: marking the channel read
+   * is what clears it, so asking again later would always come back empty and the divider would
+   * vanish while you were still looking at it. The cancelled flag keeps a stale answer (from a
+   * previous channel, or a first effect run that React threw away) from being used.
+   */
+  const [divider, setDivider] = React.useState<{ channelId: string; messageId: string | null } | null>(null)
   React.useEffect(() => {
-    if (!channelId || markedRead.current) return
-    markedRead.current = true
-    void api.chat.markRead(channelId)
+    if (!channelId) return
+    let cancelled = false
+    api.chat.readState(channelId).then(
+      (state) => {
+        if (!cancelled) setDivider({ channelId, messageId: state.firstUnreadId })
+      },
+      () => {
+        // No divider is better than no chat.
+        if (!cancelled) setDivider({ channelId, messageId: null })
+      },
+    )
+    return () => {
+      cancelled = true
+    }
   }, [channelId])
+  const dividerReady = divider !== null && divider.channelId === channelId
+  const dividerId = dividerReady ? divider.messageId : null
+
+  // Once the divider is fixed, whatever is on screen counts as read, including messages that
+  // arrive while you are here. Marking read first would have wiped the divider.
+  React.useEffect(() => {
+    if (!dividerReady) return
+    void markRead().catch(() => {})
+  }, [dividerReady, messages.data?.length, markRead])
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [messages.data?.length])
 
-  if (channels.isPending || members.isPending || messages.isPending) {
+  if (channels.isPending || members.isPending || messages.isPending || (channelId && !dividerReady)) {
     return <ListSkeleton rows={5} />
   }
 
@@ -122,7 +147,7 @@ export function ChatPage() {
             const mine = group.authorId === userId
             const showDay =
               groupIndex === 0 || groups[groupIndex - 1]?.day !== group.day
-            const carriesDivider = group.messages.some((m) => m.id === dividerId.current)
+            const carriesDivider = group.messages.some((m) => m.id === dividerId)
 
             return (
               <React.Fragment key={`${group.authorId}-${group.messages[0]?.id}`}>

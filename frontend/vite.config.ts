@@ -10,6 +10,14 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 5173,
+    // The backend's login is a cookie. Proxying /api makes it same-origin with the page, so the
+    // browser keeps and sends the cookie with no CORS setup. Only used when VITE_USE_MOCK=false.
+    proxy: {
+      '/api': 'http://127.0.0.1:8080',
+      // The chat socket. The browser's Origin and Host both stay the Vite address, so the
+      // backend's same-origin check on the handshake passes.
+      '/ws': { target: 'http://127.0.0.1:8080', ws: true },
+    },
   },
   resolve: {
     alias: {

@@ -1,6 +1,6 @@
 import { latency, read, uid, write } from '@/services/mock/db'
 import { ApiError, toChannel, toMessage } from '@/types'
-import type { Channel, Message } from '@/types'
+import type { Channel, ChatReadState, Message } from '@/types'
 
 export async function listChannels(tripId: string): Promise<Channel[]> {
   await latency()
@@ -37,35 +37,31 @@ export async function send(channelId: string, body: string): Promise<Message> {
   return toMessage(row)
 }
 
-/** How many messages this member has not seen in the channel. */
-export function unreadCount(channelId: string, userId: string): number {
-  const db = read()
-  const lastRead = db.channelReads[`${userId}:${channelId}`]
-  return db.messages.filter(
-    (m) =>
-      m.channel_id === channelId &&
-      m.author_id !== userId &&
-      (!lastRead || m.created_at > lastRead),
-  ).length
-}
-
 /**
- * The message the unread divider goes above, or null when nothing is unread.
+ * What this member has not seen in the channel: how many messages, and which one the unread
+ * divider goes above (null when nothing is unread).
  *
- * This has to be resolved from the read marker rather than by counting back from
- * the end: the unread count skips your own messages, so an offset from the tail
- * lands past the real boundary whenever you have spoken recently.
+ * The divider has to be resolved from the read marker rather than by counting back from the end:
+ * the unread count skips your own messages, so an offset from the tail lands past the real
+ * boundary whenever you have spoken recently.
+ *
+ * Async, like the real backend's version, because the backend is where the marker lives.
  */
-export function firstUnreadId(channelId: string, userId: string): string | null {
+export async function readState(channelId: string): Promise<ChatReadState> {
+  await latency()
   const db = read()
+  const userId = db.sessionUserId
+  if (!userId) throw new ApiError('forbidden', 'Sign in to read the chat.')
   const lastRead = db.channelReads[`${userId}:${channelId}`]
-  const ordered = db.messages
-    .filter((m) => m.channel_id === channelId)
+  const unread = db.messages
+    .filter(
+      (m) =>
+        m.channel_id === channelId &&
+        m.author_id !== userId &&
+        (!lastRead || m.created_at > lastRead),
+    )
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
-  const first = ordered.find(
-    (m) => m.author_id !== userId && (!lastRead || m.created_at > lastRead),
-  )
-  return first?.id ?? null
+  return { unreadCount: unread.length, firstUnreadId: unread[0]?.id ?? null }
 }
 
 /** Called when the chat screen is opened, which is what clears the tile count. */
@@ -78,24 +74,19 @@ export async function markRead(channelId: string): Promise<void> {
 }
 
 /**
- * Stand-in for a live subscription. Polls the store and calls back when the
- * message list for this channel changes; returns an unsubscribe function.
- * A real backend swaps this for a WebSocket or STOMP subscription without the
- * chat screen changing.
+ * Stand-in for the live connection. Polls the store and calls back when the message list for
+ * this channel changes; returns an unsubscribe function. Like the real one it only says "look
+ * again" and carries no messages, so the screen refetches either way.
  */
-export function subscribe(channelId: string, onChange: (messages: Message[]) => void): () => void {
-  let lastCount = -1
-  const tick = () => {
-    const messages = read()
-      .messages.filter((m) => m.channel_id === channelId)
-      .map(toMessage)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-    if (messages.length !== lastCount) {
-      lastCount = messages.length
-      onChange(messages)
+export function subscribe(channelId: string, onChange: () => void): () => void {
+  const count = () => read().messages.filter((m) => m.channel_id === channelId).length
+  let last = count()
+  const handle = setInterval(() => {
+    const now = count()
+    if (now !== last) {
+      last = now
+      onChange()
     }
-  }
-  tick()
-  const handle = setInterval(tick, 1500)
+  }, 1500)
   return () => clearInterval(handle)
 }
