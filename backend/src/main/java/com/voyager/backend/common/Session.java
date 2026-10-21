@@ -13,20 +13,20 @@ public final class Session{
     }
 
     public static void signIn(
-        HTTPServletRequest request,
+        HttpServletRequest request,
         UUID userId
     ){
         HttpSession session = request.getSession();
         request.changeSessionId();
-        session.setAttribute(USER_ID, userId);
+        session.setAttribute(USER_ID_KEY, userId);
     }
 
-    public statis UUID userId(HttpServletRequest request){
+    public static UUID userId(HttpServletRequest request){
         HttpSession session = request.getSession(false);
         if(session == null){
             return null;
         }
-        return (UUID) session.getAttribute(USER_ID);
+        return (UUID) session.getAttribute(USER_ID_KEY);
 
     }
     public static void signOut(HttpServletRequest request){
