@@ -10,7 +10,7 @@
  * backend lives on someone else's branch.
  */
 
-import * as mockAuth from '@/services/mock/auth'
+
 import * as mockBookings from '@/services/mock/bookings'
 import * as mockChat from '@/services/mock/chat'
 import * as mockExpenses from '@/services/mock/expenses'
@@ -19,6 +19,7 @@ import * as mockIdeas from '@/services/mock/ideas'
 import * as mockTrips from '@/services/mock/trips'
 import * as mockVotes from '@/services/mock/votes'
 import { reset as resetDb } from '@/services/mock/db'
+import * as realAuth from '@/services/auth'
 
 const useMock = import.meta.env.VITE_USE_MOCK !== 'false'
 
@@ -32,11 +33,11 @@ if (!useMock) {
 
 export const api = {
   auth: {
-    getSession: mockAuth.getSession,
-    signIn: mockAuth.signIn,
-    signUp: mockAuth.signUp,
-    signInAsDemo: mockAuth.signInAsDemo,
-    signOut: mockAuth.signOut,
+    getSession: realAuth.getSession,
+    signIn: realAuth.signIn,
+    signUp: realAuth.signUp,
+    signInAsDemo: realAuth.signInAsDemo,
+    signOut: realAuth.signOut,
   },
   trips: {
     list: mockTrips.list,
