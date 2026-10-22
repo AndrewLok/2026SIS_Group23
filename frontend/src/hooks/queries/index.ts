@@ -92,7 +92,12 @@ export function useUpdateTrip(tripId: string) {
   const client = useQueryClient()
   return useMutation({
     mutationFn: (patch: Partial<Trip>) => api.trips.update(tripId, patch),
-    onSuccess: () => invalidateTrip(client, tripId),
+    // The trip list shows the name, place and dates, so it re-reads too.
+    onSuccess: () =>
+      Promise.all([
+        invalidateTrip(client, tripId),
+        client.invalidateQueries({ queryKey: keys.trips, exact: true }),
+      ]),
   })
 }
 
@@ -266,7 +271,11 @@ export function useCastVote(
 /* Bookings */
 
 export const useBookings = (tripId: string) =>
-  useQuery({ queryKey: keys.bookings(tripId), queryFn: () => api.bookings.list(tripId) })
+  useQuery({
+    queryKey: keys.bookings(tripId),
+    queryFn: () => api.bookings.list(tripId),
+    refetchInterval: sharedRefresh(),
+  })
 
 export function useCreateBooking(tripId: string) {
   const client = useQueryClient()
@@ -296,7 +305,11 @@ export function useRemoveBooking(tripId: string) {
 /* Fuel */
 
 export const useFuelLegs = (tripId: string) =>
-  useQuery({ queryKey: keys.fuel(tripId), queryFn: () => api.fuel.list(tripId) })
+  useQuery({
+    queryKey: keys.fuel(tripId),
+    queryFn: () => api.fuel.list(tripId),
+    refetchInterval: sharedRefresh(),
+  })
 
 export function useCreateFuelLeg(tripId: string) {
   const client = useQueryClient()
@@ -326,7 +339,11 @@ export function useRemoveFuelLeg(tripId: string) {
 /* Expenses */
 
 export const useExpenses = (tripId: string) =>
-  useQuery({ queryKey: keys.expenses(tripId), queryFn: () => api.expenses.list(tripId) })
+  useQuery({
+    queryKey: keys.expenses(tripId),
+    queryFn: () => api.expenses.list(tripId),
+    refetchInterval: sharedRefresh(),
+  })
 
 export function useCreateExpense(tripId: string) {
   const client = useQueryClient()

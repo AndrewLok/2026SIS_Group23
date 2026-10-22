@@ -220,4 +220,101 @@ test.describe('activities', () => {
 
     await closeAll(priya, jonas, mia)
   })
+  test('the person who added an activity, and the owner, can edit it and rule it out, and nobody else is offered either', async ({ browser }) => {
+    const priya = await newPerson(browser, 'Priya Nair')
+    const jonas = await newPerson(browser, 'Jonas Weber')
+    const mia = await newPerson(browser, 'Mia Costa')
+    const trip = await createTrip(priya, 'Great Ocean Road')
+    await joinByLink(jonas, trip.code)
+    await joinByLink(mia, trip.code)
+
+    // Jonas puts one to a vote. Priya (the owner) and Jonas can change it; Mia cannot.
+    await openActivities(jonas, trip.path)
+    await addActivity(jonas, 'Kayak', { vote: true })
+    await tab(jonas.page, 'Voting').click()
+    await openActivities(priya, trip.path)
+    await tab(priya.page, 'Voting').click()
+    await openActivities(mia, trip.path)
+    await tab(mia.page, 'Voting').click()
+    await expect(titled(mia.page, 'Kayak')).toBeVisible(POLL)
+    await expect(priya.page.getByRole('button', { name: 'Edit Kayak' })).toBeVisible()
+    await expect(jonas.page.getByRole('button', { name: 'Edit Kayak' })).toBeVisible()
+    await expect(mia.page.getByRole('button', { name: 'Edit Kayak' })).toHaveCount(0)
+    await expect(mia.page.getByRole('button', { name: 'Rule out Kayak' })).toHaveCount(0)
+
+    // The form will not send a blank title, and a change reaches the others.
+    await jonas.page.getByRole('button', { name: 'Edit Kayak' }).click()
+    const drawer = jonas.page.getByRole('dialog')
+    await drawer.getByLabel('What is it').fill('   ')
+    await drawer.getByRole('button', { name: 'Save changes' }).click()
+    await expect(drawer.getByText('Give the activity a title.')).toBeVisible()
+    await drawer.getByLabel('What is it').fill('Sea kayak')
+    await drawer.getByLabel('Anything the group should know').fill('Bring a hat')
+    await drawer.getByRole('button', { name: 'Save changes' }).click()
+    await expect(jonas.page.getByText('Activity changed.')).toBeVisible()
+    await expect(titled(jonas.page, 'Sea kayak')).toBeVisible()
+    await expect(titled(mia.page, 'Sea kayak')).toBeVisible(POLL)
+    await expect(mia.page.getByText('Bring a hat')).toBeVisible()
+
+    // Ruling it out moves it to the other tab for everyone, and putting it back brings it home.
+    await jonas.page.getByRole('button', { name: 'Rule out Sea kayak' }).click()
+    await expect(jonas.page.getByText('Ruled out. You can put it back later.')).toBeVisible()
+    await expect(titled(jonas.page, 'Sea kayak')).toHaveCount(0)
+    await tab(mia.page, 'Ruled out').click()
+    await expect(titled(mia.page, 'Sea kayak')).toBeVisible(POLL)
+    await expect(mia.page.getByRole('button', { name: 'Put Sea kayak back to a vote' })).toHaveCount(0)
+    await tab(priya.page, 'Ruled out').click()
+    await expect(priya.page.getByRole('button', { name: 'Put Sea kayak back to a vote' })).toBeVisible(POLL)
+    await priya.page.getByRole('button', { name: 'Put Sea kayak back to a vote' }).click()
+    await expect(priya.page.getByText('Put back to a vote.')).toBeVisible()
+    await tab(jonas.page, 'Voting').click()
+    await expect(titled(jonas.page, 'Sea kayak')).toBeVisible(POLL)
+
+    await closeAll(priya, jonas, mia)
+  })
+
+  test('an activity on the plan can be given an end and be made all day, and the form checks the times', async ({ browser }) => {
+    const priya = await newPerson(browser, 'Priya Nair')
+    const jonas = await newPerson(browser, 'Jonas Weber')
+    const trip = await createTrip(priya, 'Great Ocean Road')
+    await joinByLink(jonas, trip.code)
+
+    await openActivities(priya, trip.path)
+    await addActivity(priya, 'Picnic', { when: '2030-06-15T12:00' })
+    await openActivities(jonas, trip.path)
+    await expect(titled(jonas.page, 'Picnic')).toBeVisible()
+
+    await priya.page.getByRole('button', { name: 'Edit Picnic' }).click()
+    const drawer = priya.page.getByRole('dialog')
+    // On the plan it must keep its time, and cannot end before it starts.
+    await drawer.getByLabel('When').fill('')
+    await drawer.getByRole('button', { name: 'Save changes' }).click()
+    await expect(drawer.getByText('Pick a date and time.')).toBeVisible()
+    await drawer.getByLabel('When').fill('2030-06-15T12:00')
+    await drawer.getByLabel('Ends').fill('2030-06-15T10:00')
+    await drawer.getByRole('button', { name: 'Save changes' }).click()
+    await expect(drawer.getByText('It cannot end before it starts.')).toBeVisible()
+    await drawer.getByLabel('Ends').fill('2030-06-15T13:00')
+    await drawer.getByRole('button', { name: 'Save changes' }).click()
+    await expect(priya.page.getByText('Activity changed.')).toBeVisible()
+    await expect(priya.page.getByText('12:00 to 13:00')).toBeVisible()
+    await expect(jonas.page.getByText('12:00 to 13:00')).toBeVisible(POLL)
+
+    // All day shows the day, not the time.
+    await priya.page.getByRole('button', { name: 'Edit Picnic' }).click()
+    await priya.page.getByRole('dialog').getByRole('checkbox', { name: /All day/ }).click()
+    await priya.page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click()
+    await expect(priya.page.getByText('Sat 15 Jun, all day')).toBeVisible()
+    await expect(jonas.page.getByText('Sat 15 Jun, all day')).toBeVisible(POLL)
+
+    // The owner of the activity can drop Jonas from the people going, and he sees it.
+    await expect(jonas.page.getByRole('button', { name: "I'm out" })).toBeVisible()
+    await priya.page.getByRole('button', { name: 'Edit Picnic' }).click()
+    await priya.page.getByRole('dialog').getByRole('checkbox', { name: /Jonas Weber/ }).click()
+    await priya.page.getByRole('dialog').getByRole('button', { name: 'Save changes' }).click()
+    await expect(priya.page.getByText('Activity changed.')).toBeVisible()
+    await expect(jonas.page.getByRole('button', { name: "I'm in" })).toBeVisible(POLL)
+
+    await closeAll(priya, jonas)
+  })
 })

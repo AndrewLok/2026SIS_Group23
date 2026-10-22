@@ -1,0 +1,13 @@
+# `--spring.profiles.active=h2` (or SPRING_PROFILES_ACTIVE=h2): run with no database installed. Everything
+# lives in memory and is gone when the server stops. The end-to-end tests start the server this way.
+spring:
+  datasource:
+    url: jdbc:h2:mem:voyagerdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  flyway:
+    enabled: false   # The migrations are written for Postgres. Here Hibernate makes the tables itself.
+  jpa:
+    hibernate:
+      ddl-auto: update

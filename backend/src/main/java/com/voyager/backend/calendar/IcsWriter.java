@@ -23,7 +23,7 @@ public final class IcsWriter {
     // One entry on the calendar. end may be null (a point in time); uid must stay the same for the
     // life of the entry, so a calendar app updates it instead of adding a second copy.
     public record Event(String uid, Instant stamp, Instant start, Instant end, boolean allDay,
-            String summary, String description, String category) {}
+            String summary, String description, String location, String category) {}
 
     private static final String CRLF = "\r\n";
     private static final int MAX_LINE_BYTES = 75;
@@ -70,6 +70,9 @@ public final class IcsWriter {
         line(out, "SUMMARY:" + escape(e.summary()));
         if (e.description() != null && !e.description().isBlank()) {
             line(out, "DESCRIPTION:" + escape(e.description()));
+        }
+        if (e.location() != null && !e.location().isBlank()) {
+            line(out, "LOCATION:" + escape(e.location()));
         }
         if (e.category() != null && !e.category().isBlank()) {
             line(out, "CATEGORIES:" + escape(e.category()));

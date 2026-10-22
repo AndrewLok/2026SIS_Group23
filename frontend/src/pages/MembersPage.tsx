@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Check, Copy, Link2, LogOut, RefreshCw, UserMinus } from 'lucide-react'
+import { Check, Copy, Crown, Link2, LogOut, RefreshCw, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +25,7 @@ import {
   useRegenerateCode,
   useRemoveMember,
   useTrip,
+  useUpdateRole,
 } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
 
@@ -62,14 +63,19 @@ export function MembersPage() {
   const navigate = useNavigate()
 
   const trip = useTrip(tripId)
-  const members = useMembers(tripId)
+  // Live: who is an owner, and who has joined or gone, changes under an open screen.
+  const members = useMembers(tripId, true)
   const expenses = useExpenses(tripId)
 
 
   const regenerate = useRegenerateCode(tripId)
   const removeMember = useRemoveMember(tripId)
+  const updateRole = useUpdateRole(tripId)
 
   const isOwner = members.data?.find((m) => m.userId === userId)?.role === 'owner'
+  const ownerCount = (members.data ?? []).filter((m) => m.role === 'owner').length
+  // A trip always keeps an owner, so the last one has to hand over before leaving or stepping down.
+  const otherOwnerExists = ownerCount > 1
   const joinLink = trip.data ? `${window.location.origin}/join/${trip.data.inviteCode}` : ''
 
   const spent = totalSpent(expenses.data ?? [])
@@ -142,6 +148,9 @@ export function MembersPage() {
               {list.map((member) => {
                 const isSelf = member.userId === userId
                 const canRemove = isOwner && !isSelf
+                const makeOwner = member.role !== 'owner'
+                // An owner can change anyone's role, their own included once somebody else is an owner.
+                const canChangeRole = isOwner && (!isSelf || otherOwnerExists) && (makeOwner || otherOwnerExists)
                 return (
                   <li key={member.userId} className="plate flex items-center gap-3 px-4 py-3">
                     <MemberAvatar profile={member.profile} size={36} />
@@ -159,6 +168,28 @@ export function MembersPage() {
                         owner
                       </Badge>
                     ) : null}
+                    {canChangeRole ? (
+                      <RoleDialog
+                        name={member.profile.displayName}
+                        isSelf={isSelf}
+                        makeOwner={makeOwner}
+                        onConfirm={async () => {
+                          const role = makeOwner ? 'owner' : 'member'
+                          try {
+                            await updateRole.mutateAsync({ userId: member.userId, role })
+                            toast.success(
+                              makeOwner
+                                ? `${member.profile.displayName} is now an owner.`
+                                : isSelf
+                                  ? 'You are no longer an owner.'
+                                  : `${member.profile.displayName} is no longer an owner.`,
+                            )
+                          } catch (error) {
+                            toast.error(messageFor(error, 'Could not change that role.'))
+                          }
+                        }}
+                      />
+                    ) : null}
                     {canRemove ? (
                       <RemoveMemberDialog
                         name={member.profile.displayName}
@@ -174,7 +205,7 @@ export function MembersPage() {
                         }}
                       />
                     ) : null}
-                    {isSelf && !isOwner ? (
+                    {isSelf && (!isOwner || otherOwnerExists) ? (
                       <LeaveTripDialog
                         onConfirm={async () => {
                           try {
@@ -195,12 +226,58 @@ export function MembersPage() {
         </QueryBoundary>
       </section>
 
+      {isOwner && !otherOwnerExists && memberIds.length > 1 ? (
+        <p className="text-xs text-muted-foreground">
+          You are the only owner, so you cannot leave yet. Make someone else an owner first.
+        </p>
+      ) : null}
+
       <Placard className="self-start">Even splits only</Placard>
       <p className="-mt-3 text-xs text-muted-foreground">
         Removing someone recalculates every balance on the trip. Fuel legs keep their own rider
         list, so they only change if the person removed was riding.
       </p>
     </div>
+  )
+}
+
+function RoleDialog({
+  name,
+  isSelf,
+  makeOwner,
+  onConfirm,
+}: {
+  name: string
+  isSelf: boolean
+  makeOwner: boolean
+  onConfirm: () => Promise<void>
+}) {
+  const label = makeOwner ? `Make ${name} an owner` : isSelf ? 'Step down as owner' : `Make ${name} a member`
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="size-8 shrink-0 text-placard">
+          <Crown size={15} aria-hidden="true" />
+          <span className="sr-only">{label}</span>
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{label}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {makeOwner
+              ? 'Owners can change the trip’s name, dates and budget cap, make a new invite code, remove people and change roles, including yours.'
+              : isSelf
+                ? 'You will stay on the trip as a member and lose those powers. Another owner can make you one again.'
+                : `${name} stays on the trip as a member and loses those powers.`}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => void onConfirm()}>{label}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 

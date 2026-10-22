@@ -204,12 +204,12 @@ Voyager is read in a car at night, by someone who has ten seconds and one thumb.
 
 The field is achromatic on purpose, and that is the load-bearing decision of the whole system. Panel, face, bezel and placard are all tinted off one hue and none of them is a pure grey or a pure black. Against that field there are exactly three chromatic signals with fixed meanings: radium green is a live reading, caution amber is a figure that wants your attention, warning red is destructive only and never decorates. Because nothing else on screen carries chroma, a single amber needle is impossible to miss. The moment a fourth colour appears — a category palette, a chart hue, a brand accent — the signal system stops working.
 
-The app is dark only, by explicit decision. There is no light theme and no `.dark` class to toggle: `:root` carries `color-scheme: dark` and the palette directly. A light mode would not be a variant of this world, it would be a different world. Density is high and rhythm is tight (a 0.75rem–1rem gap dominates), corners are machined rather than soft (0.25rem base radius), and the app spends its one authored motion moment on the power-on self-test sweep when the panel comes alive.
+The app is a night instrument by origin and opens in night. There is also a daylight theme, the same plates and the same three signals lit from the front instead of glowing, chosen with the sun and moon button (top of the login and trips screens, and in a trip's top bar). `:root` carries the daylight palette, `.dark` on `<html>` replaces it with night, and the choice is kept in the browser (`voyager-theme`). The overview cluster is pinned to night with `.night` whichever is chosen. Density is high and rhythm is tight (a 0.75rem–1rem gap dominates), corners are machined rather than soft (0.25rem base radius), and the app spends its one authored motion moment on the power-on self-test sweep when the panel comes alive.
 
 One screen goes further. The overview (the Panel tab) is the driver's view of a classic analogue car at night: a windscreen with the road moving toward the glass, a cowl holding two chrome-ringed, green-backlit dials with orange needles, mechanical odometer drums, and a strip of warning lamps. It is a scoped exception with its own materials (see The Driver's Seat Exception); the backlight stays radium and the Three Signals keep their meanings, so it still reads as the same app. Every other screen stays on plates.
 
 **Key Characteristics:**
-- Dark only; no light theme, no theme toggle.
+- Night by default, with a daylight theme behind a toggle; the overview cluster is night in both.
 - Achromatic field, three fixed-meaning signal colours.
 - A dial only where a level is read; alerts are lamps that stay dark until something waits on you.
 - Plates with fixings, texture and a lit bezel edge — never flat cards.

@@ -41,6 +41,19 @@ export function dayToIso(day: string): string {
   return set(date, { hours: 12, minutes: 0, seconds: 0, milliseconds: 0 }).toISOString()
 }
 
+/** An instant as a day-picker shows it ("2026-11-08"), on the viewer's own clock. */
+export const isoToDay = (iso: string): string => format(parseISO(iso), 'yyyy-MM-dd')
+
+/** An instant as a date-and-time picker shows it ("2026-11-08T14:30"), on the viewer's own clock. */
+export const isoToLocalInput = (iso: string): string => format(parseISO(iso), "yyyy-MM-dd'T'HH:mm")
+
+/** What a date-and-time picker holds ("2026-11-08T14:30") as the instant we store, or null when empty. */
+export function localInputToIso(value: string): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  return isValid(date) ? date.toISOString() : null
+}
+
 /** "Fri 14 Mar" */
 export const formatDay = (iso: string): string => format(parseISO(iso), 'EEE d MMM')
 
@@ -53,6 +66,26 @@ export const formatTime = (iso: string): string => format(parseISO(iso), 'HH:mm'
 /** "Fri 14 Mar, 09:40" */
 export const formatDayTime = (iso: string): string =>
   format(parseISO(iso), 'EEE d MMM, HH:mm')
+
+/**
+ * When an activity happens, in one line: "Fri 14 Mar, 09:40", "Fri 14 Mar, 09:40 to 12:00" (or with
+ * the end's own day when it is not the same day), or "Fri 14 Mar, all day". Null when it has no start.
+ */
+export function formatWhen(
+  startIso: string | null,
+  endIso: string | null,
+  allDay: boolean,
+): string | null {
+  if (!startIso) return null
+  if (allDay) {
+    const sameDay = !endIso || dayKey(endIso) === dayKey(startIso)
+    return sameDay ? `${formatDay(startIso)}, all day` : `${formatDay(startIso)} to ${formatDay(endIso as string)}, all day`
+  }
+  if (!endIso) return formatDayTime(startIso)
+  return dayKey(endIso) === dayKey(startIso)
+    ? `${formatDayTime(startIso)} to ${formatTime(endIso)}`
+    : `${formatDayTime(startIso)} to ${formatDayTime(endIso)}`
+}
 
 /** Month key used to group an agenda. */
 export const monthKey = (iso: string): string => format(parseISO(iso), 'yyyy-MM')

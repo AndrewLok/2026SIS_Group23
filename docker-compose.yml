@@ -1,0 +1,22 @@
+# A local Postgres for the backend: `docker compose up -d db` in this folder, then `./gradlew bootRun`
+# in backend/. The credentials match the defaults in backend/src/main/resources/application.yaml.
+# Data is kept in a volume across restarts; `docker compose down -v` throws it away.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: voyager
+      POSTGRES_USER: voyager
+      POSTGRES_PASSWORD: voyager
+    ports:
+      - "5432:5432"
+    volumes:
+      - voyager-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voyager -d voyager"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  voyager-db:

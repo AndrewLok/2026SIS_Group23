@@ -22,6 +22,7 @@ import { PageHeader, Placard } from '@/components/common/chrome'
 import { useCreateTrip, useJoinByCode, useTrips } from '@/hooks/queries'
 import { useSession } from '@/hooks/useSession'
 import { daysUntil, dayToIso, formatDateRange } from '@/lib/dates'
+import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { messageFor } from '@/lib/errors'
 import type { Trip } from '@/types'
 
@@ -240,10 +241,13 @@ export function TripsPage() {
         title="Your trips"
         subtitle={user ? `Signed in as ${user.displayName}` : undefined}
         action={
-          <Button variant="ghost" size="sm" className="text-placard" onClick={() => void signOut()}>
-            <LogOut size={15} aria-hidden="true" />
-            Sign out
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" className="text-placard" onClick={() => void signOut()}>
+              <LogOut size={15} aria-hidden="true" />
+              Sign out
+            </Button>
+          </div>
         }
       />
 

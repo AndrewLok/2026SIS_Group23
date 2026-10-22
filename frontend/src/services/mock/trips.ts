@@ -77,6 +77,7 @@ export async function update(tripId: string, patch: Partial<Trip>): Promise<Trip
     if (patch.endDate !== undefined) trip.end_date = patch.endDate
     if (patch.allowanceCents !== undefined) trip.allowance_cents = patch.allowanceCents
     if (patch.privateDebts !== undefined) trip.private_debts = patch.privateDebts
+    if (patch.budgetCapCents !== undefined) trip.budget_cap_cents = patch.budgetCapCents
     if (patch.defaultEfficiency !== undefined) trip.default_efficiency = patch.defaultEfficiency
     if (patch.defaultPricePerLitreCents !== undefined) {
       trip.default_price_per_litre_cents = patch.defaultPricePerLitreCents

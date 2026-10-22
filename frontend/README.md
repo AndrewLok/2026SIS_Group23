@@ -27,10 +27,11 @@ seeded member of a trip with five people, so every screen has real-looking data 
 Everything in the app is fabricated demo data. No person, booking, reference or figure
 in it corresponds to anything real.
 
-### With the real backend (sign-in, trips, members, chat, activities and votes so far)
+### With the real backend (everything: sign-in, trips, members, chat, activities, votes, bookings, expenses and fuel)
 
 ```bash
-# terminal 1, in ../backend (listens on 8080)
+# terminal 1, in ../backend (listens on 8080; needs Postgres, see the root README, or add
+# SPRING_PROFILES_ACTIVE=h2 to run with the database in memory)
 ./gradlew bootRun
 
 # terminal 2, in this folder
@@ -43,10 +44,17 @@ logged in with a session cookie. Vite proxies `/api` to `127.0.0.1:8080`, so the
 same-origin and no CORS setup is needed. The demo button is hidden in this mode, because the
 demo account only exists in the mock store.
 
+The app opens in night, and the sun and moon button (login, trip list, and a trip's top bar) switches to
+daylight. The choice is kept in this browser (`voyager-theme` in localStorage), not on the account, and the
+overview's dashboard stays a night scene in both. It is `next-themes` putting a `dark` class on `<html>`,
+so a reload does not flash the other theme.
+
 Trips and their members (create, edit, invite code, join, leave, remove, roles) then go to
 `/api/trips/*` too, so they are shared between people and devices. Only the owner can change
-a trip's name, dates or currency, make a new invite code, remove others or change roles; any
-member can change the shared settings (private debts, allowance, fuel defaults) or leave.
+a trip's name, destination, dates, currency or budget cap, make a new invite code, remove others or
+change roles; any member can change the shared settings (private debts, allowance, fuel defaults)
+or leave. The Trip settings screen (in the trip menu) edits all of these except the currency; see
+below.
 
 Group chat is real too. Messages go over `/api/channels/*`, and what each person has read is
 kept on the server, so the unread count and the "New" divider follow you between devices. New
@@ -64,28 +72,67 @@ open is counted again against the smaller group. Other people's votes appear by 
 screen looking again every 5 seconds while it is open (there is no live socket for this one), so
 two people on the screen see each other's changes within a few seconds.
 
+Trip settings (trip menu, "Trip settings") has two forms. The owner's is the name, destination, dates
+and a budget cap; everyone else sees it read only. Anyone can save the other: allowance each, and the
+efficiency and price per litre the fuel form starts from. Each sends only the fields that changed
+(`src/lib/tripSettings.ts`), so a member saving the shared form never trips over the owner-only rules,
+and nobody's save overwrites a field somebody else changed meanwhile. The budget cap, when set, is
+what the overview's tank and the Money screen's spend bar measure against instead of the cost
+estimate. The currency can be changed on the server but is not offered here, because amounts are
+shown in dollars whatever it says. On the Members screen an owner can promote a member to owner or
+step an owner down; a trip always keeps at least one owner, and an owner may leave once there is
+another. On Activities, the person who proposed an idea (or the owner) can edit it, rule it out, and
+put a ruled-out idea back to a vote.
+
+Bookings are real too (`/api/trips/{id}/bookings`, `/api/bookings/*`). Everyone on the trip sees every
+booking; a personal one is marked with its owner's name, not hidden. The person who added a booking,
+the person it belongs to, and the owner can delete it, and the Delete button is only offered to
+them. If someone leaves the trip, bookings that belonged to them go too. Other people's changes
+appear within 5 seconds, the same way activities do. The top of the screen suggests two bookings (`src/lib/recommendations.ts`): fixed examples, the same
+on every trip, which open the ordinary booking form filled in, with the cost ready to go on the money
+screen. The people who may delete a booking can also
+edit it (the pencil on its card): the form starts from what is saved and sends only what you changed.
+
+Expenses are real too (`/api/trips/{id}/expenses`, `/api/expenses/*`). Everyone on the trip sees every
+expense. The person who added one, the person who paid, and the owner can delete it, and the Delete
+button is only offered to them. Balances and "settle up" are still worked out on the screen
+(`src/lib/balances.ts`) from the list the server sends, so the split rules live in one place.
+Someone who leaves keeps their expenses and their share of others: they are still owed what they
+paid, and still owe their part of what was split with them, shown as "someone who has left the trip"
+in the settle-up list. The screens that count people
+(Money and the trip overview) look at the member list every 5 seconds for that reason. Other people's
+changes appear within 5 seconds. The form has no way to edit an expense yet, although the server supports it.
+
+Fuel is real too (`/api/trips/{id}/fuel-legs`, `/api/fuel-legs/*`). Everyone on the trip sees every
+leg. The person who added one, the driver, and the owner can delete it, and the Delete button is
+only offered to them. A leg's expense is written by the server together with the leg, paid by the
+driver, so it arrives in the ordinary expenses list (marked `fuel`, read only, with a link back to the
+leg) and is part of every balance; deleting the leg removes it. The cost is worked out on both sides
+with the same sum (`src/lib/fuel.ts` here, `FuelCost` on the server), so the number on the leg card
+and the expense always agree to the cent. The price per litre has to be whole cents, as the trip's
+remembered default is. Making a leg saves its efficiency and price as the trip's defaults, so they
+persist across reloads. Someone who leaves keeps their legs and their share of others', like
+expenses. A leg can be edited by the people who may delete it (the pencil on its card), and its
+expense follows. As with expenses, only what changed is sent, and a driver or rider who has left
+stays on the leg unless their tick is taken off.
+
 The calendar can be taken out of the app (Calendar screen, "Add to my calendar"): a link for Google,
 Apple or Outlook to subscribe to, which keeps up as plans change, and a `.ics` download for a
 one-off copy. The server builds both from the activities going ahead (`/api/trips/{id}/calendar.ics`,
 `/api/trips/{id}/calendar/feed`, and the open `/api/calendar/feeds/{token}.ics` a calendar app reads
 with no login). There is no mock version, so the button only shows with a real backend
 (`features.calendarExport`). The link needs an address that is online: a calendar app's servers cannot
-reach `localhost`, and the panel says so when it sees one. Bookings are not in the file yet, because
-they have no backend.
+reach `localhost`, and the panel says so when it sees one. Bookings with a time are in the file, but
+not their reference or notes.
 
 If the server stops recognising you (the session ran out, or you signed out somewhere else), the
 next request comes back 401, which the app treats as `unauthenticated` rather than `forbidden`. One
 handler in `services/queryClient.ts` then clears what was loaded and sends you to the sign-in screen
 with a note, and signing in again returns you to where you were.
 
-Expenses, fuel and bookings still run on the mock layer until their
-backend side is built, which means that data lives in your browser only and is not shared
-between people or devices. Those screens read the mock store, so a temporary bridge
-(`services/mock/bridge.ts`) mirrors your account, the real trips and their members into it
-whenever they are fetched. It goes away as each of those modules moves to `services/http`.
-
-Known gap: fuel's "remembered defaults" are saved by the mock fuel service onto the mock trip
-row only, so on a real trip they do not persist across reloads until fuel has a backend.
+Every module now has a backend side, so with `VITE_USE_MOCK=false` nothing is read from or written to
+the local mock store. (The temporary bridge that used to mirror your account, trips and members into
+it for the unfinished screens has been deleted.) The mock layer is there only for the no-backend demo.
 
 ### End to end tests
 
@@ -94,8 +141,8 @@ sign-in, creating a trip, joining by invite link, regenerating the code, leaving
 chat (a message reaching the other person's open screen live, the unread count, the "New"
 divider), activities (a vote on one screen carrying an activity onto the plan on another,
 voting for and against, saying you are in or out, who sees a delete button, someone leaving mid-vote),
-the members screen (who is offered Remove and Leave, removing someone and letting them back in),
-the calendar and the overview's next-up sign and Vote lamp, taking the calendar out (the subscription link read with no login, a new link replacing it, the download), and what happens when things go wrong: the session ending under you, a refused request,
+the members screen (who is offered Remove and Leave, removing someone and letting them back in, promoting and demoting), trip settings (what an owner and a member can change), editing what was added (bookings, expenses, legs),
+the calendar and the overview's next-up sign and Vote lamp, night and daylight (`theme.e2e.ts`), bookings (one person's screen reaching another's, who is offered Delete, leaving), expenses (a payment reaching the others and the balances adding up, exact amounts, who is offered Delete, someone leaving with money outstanding), fuel (a leg and its expense reaching everyone, only the riders being charged, who is offered Delete, a driver other than the person who added it), taking the calendar out (the subscription link read with no login, a new link replacing it, the download), and what happens when things go wrong: the session ending under you, a refused request,
 over-long text, a browser in another time zone (`e2e/resilience.e2e.ts`). Each person in a test
 has their own browser context, so their own cookie, like separate phones.
 
@@ -105,8 +152,8 @@ npm run e2e
 ```
 
 Playwright starts everything itself and stops it afterwards: the backend with
-`./gradlew bootRun` in `../backend` (port 8080, in-memory database, so every run starts
-empty) and a separate Vite on port **5174** with `VITE_USE_MOCK=false`, so a dev server
+`./gradlew bootRun` in `../backend` (port 8080, with the `h2` profile: an in-memory database, so
+nothing to install and every run starts empty) and a separate Vite on port **5174** with `VITE_USE_MOCK=false`, so a dev server
 you already have open on 5173 can never be tested by mistake. The first run is slow while
 Gradle compiles. If a backend is already running on 8080 it is reused; the tests sign up
 fresh accounts, so leftover data does not matter. Failed runs leave a screenshot and a trace
@@ -119,9 +166,9 @@ them up. The detailed permission rules belong in the backend's `TripFlowTests`, 
 and `IdeaFlowTests`; the e2e tests cover journeys across two people's screens. The live chat checks
 wait only 3 seconds, less than the 5 second polling fallback, so they pass only when the
 socket really delivers. The activities checks wait up to 12 seconds, because they rely on that
-polling. Expenses, fuel and bookings still run on the mock layer and are deliberately not covered
-yet. Trip renaming, role changes and ruling out or editing an activity have no screen yet, so
-only the backend tests cover them.
+polling. `settings.e2e.ts` covers the trip settings screen and `edits.e2e.ts` the booking, expense
+and fuel leg edit forms; `members.e2e.ts` and `activities.e2e.ts` cover role changes and ruling out
+or editing an activity. The rules behind them are in the backend tests.
 
 ## How it is put together
 
@@ -158,10 +205,10 @@ Four rules hold throughout:
 
 `src/services/client.ts` is the only file that has to change. Rewrite the modules behind
 it keeping the same method signatures, and no screen is touched. Sign-in, trips, chat,
-activities and votes are done: `services/http/auth.ts`, `trips.ts`, `chat.ts`, `ideas.ts` and
-`votes.ts` replace their mock twins when
+activities, votes, bookings, expenses and fuel are done: `services/http/auth.ts`, `trips.ts`, `chat.ts`, `ideas.ts`,
+`votes.ts`, `bookings.ts`, `expenses.ts` and `fuel.ts` replace their mock twins when
 `VITE_USE_MOCK=false`, and `services/http/request.ts` is the shared fetch wrapper that turns
-every failure into an `ApiError`. Move the other modules over one at a time the same way.
+every failure into an `ApiError`. That is every module.
 
 Decided so far:
 
@@ -176,8 +223,6 @@ Still to sort out, entity by entity:
 
 - Money is integer cents on both sides (the backend trip's budget is `budgetCapCents`).
   Never let a float into the app.
-- Expenses, fuel legs and bookings do not exist server side yet. Those endpoints are a
-  conversation, not a swap.
 
 Keep the mock layer in the repo behind `VITE_USE_MOCK`. It is what makes the app
 demoable when the backend is on someone else's branch and not running.

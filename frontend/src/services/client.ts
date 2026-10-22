@@ -12,16 +12,19 @@
  * VITE_USE_MOCK=false means "use the real backend wherever one exists". So far
  * that is sign-in (src/services/http/auth.ts), trips with their members
  * (src/services/http/trips.ts), chat (src/services/http/chat.ts) and activities with
- * their votes (src/services/http/ideas.ts and votes.ts), and the calendar file and subscription link
- * (src/services/http/calendar.ts, which has no mock side); everything else below
- * keeps running on the mock layer until its backend side is built.
- * Move one module at a time from mockX to httpX as each lands. While the two are mixed, services/mock/bridge.ts mirrors
- * what the backend says into the mock store so the mock screens still work.
+ * their votes (src/services/http/ideas.ts and votes.ts), bookings (src/services/http/bookings.ts),
+ * expenses (src/services/http/expenses.ts), fuel legs (src/services/http/fuel.ts), and the calendar
+ * file and subscription link (src/services/http/calendar.ts, which has no mock side). That is every
+ * module, so nothing the real backend serves touches the mock store any more; it is there only for
+ * the demo.
  */
 
 import * as httpAuth from '@/services/http/auth'
 import * as httpCalendar from '@/services/http/calendar'
+import * as httpBookings from '@/services/http/bookings'
 import * as httpChat from '@/services/http/chat'
+import * as httpExpenses from '@/services/http/expenses'
+import * as httpFuel from '@/services/http/fuel'
 import * as httpIdeas from '@/services/http/ideas'
 import * as httpTrips from '@/services/http/trips'
 import * as httpVotes from '@/services/http/votes'
@@ -43,7 +46,7 @@ export const features = {
   /** The seeded demo account lives only in the mock store, so it needs the mock auth. */
   demoSignIn: useMock,
   /**
-   * Other people change activities and votes while a screen is open, and only a real backend has
+   * Other people change activities, votes, bookings, expenses and fuel legs while a screen is open, and only a real backend has
    * other people, so only then are they read again every few seconds.
    */
   sharedActivities: !useMock,
@@ -63,6 +66,12 @@ const chat = useMock ? mockChat : httpChat
 // head count they are counted against is the trip's members.
 const ideas = useMock ? mockIdeas : httpIdeas
 const votes = useMock ? mockVotes : httpVotes
+// Bookings are on their own: who they belong to is checked against the trip's members on the server.
+const bookings = useMock ? mockBookings : httpBookings
+// Expenses and fuel legs are real too. A fuel leg's expense is written by the server with the leg, so
+// it turns up in the expenses list like any other.
+const expenses = useMock ? mockExpenses : httpExpenses
+const fuel = useMock ? mockFuel : httpFuel
 
 export const api = {
   auth: {
@@ -110,22 +119,22 @@ export const api = {
     download: useMock ? needsBackend('Downloading the calendar') : httpCalendar.download,
   },
   bookings: {
-    list: mockBookings.list,
-    create: mockBookings.create,
-    update: mockBookings.update,
-    remove: mockBookings.remove,
+    list: bookings.list,
+    create: bookings.create,
+    update: bookings.update,
+    remove: bookings.remove,
   },
   fuel: {
-    list: mockFuel.list,
-    create: mockFuel.create,
-    update: mockFuel.update,
-    remove: mockFuel.remove,
+    list: fuel.list,
+    create: fuel.create,
+    update: fuel.update,
+    remove: fuel.remove,
   },
   expenses: {
-    list: mockExpenses.list,
-    create: mockExpenses.create,
-    update: mockExpenses.update,
-    remove: mockExpenses.remove,
+    list: expenses.list,
+    create: expenses.create,
+    update: expenses.update,
+    remove: expenses.remove,
   },
   chat: {
     listChannels: chat.listChannels,

@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { closeAll, createTrip, joinByLink, memberRow, newPerson } from './helpers.ts'
 
+const POLL = { timeout: 12_000 }
+
 /*
  * The members screen from the owner's side and the member's side. The rules themselves (only an
  * owner removes people, a trip always keeps an owner) are checked in the backend's TripFlowTests;
@@ -68,6 +70,53 @@ test.describe('members', () => {
     await joinByLink(jonas, trip.code)
     await priya.page.reload()
     await expect(memberRow(priya.page, 'Jonas Weber')).toBeVisible()
+
+    await closeAll(priya, jonas, mia)
+  })
+  test('an owner can make someone else an owner, who can then act, and the first owner can step down and leave', async ({ browser }) => {
+    const priya = await newPerson(browser, 'Priya Nair')
+    const jonas = await newPerson(browser, 'Jonas Weber')
+    const mia = await newPerson(browser, 'Mia Costa')
+    const trip = await createTrip(priya, 'Great Ocean Road')
+    await joinByLink(jonas, trip.code)
+    await joinByLink(mia, trip.code)
+
+    await priya.page.goto(`${trip.path}/members`)
+    await jonas.page.goto(`${trip.path}/members`)
+    await mia.page.goto(`${trip.path}/members`)
+
+    // A member is offered no way to change roles, and the only owner has none for herself.
+    await expect(jonas.page.getByRole('button', { name: /^Make / })).toHaveCount(0)
+    await expect(priya.page.getByRole('button', { name: 'Step down as owner' })).toHaveCount(0)
+    await expect(priya.page.getByText('You are the only owner')).toBeVisible()
+
+    // Changing her mind at the prompt changes nobody.
+    await priya.page.getByRole('button', { name: 'Make Jonas Weber an owner' }).click()
+    await expect(priya.page.getByRole('alertdialog')).toContainText('Make Jonas Weber an owner?')
+    await priya.page.getByRole('button', { name: 'Cancel' }).click()
+    await expect(jonas.page.getByRole('button', { name: 'Remove Mia Costa' })).toHaveCount(0)
+
+    // Making him an owner shows on his open screen by itself, and gives him the owner's buttons.
+    await priya.page.getByRole('button', { name: 'Make Jonas Weber an owner' }).click()
+    await priya.page.getByRole('alertdialog').getByRole('button', { name: 'Make Jonas Weber an owner' }).click()
+    await expect(priya.page.getByText('Jonas Weber is now an owner.')).toBeVisible()
+    await expect(priya.page.getByRole('button', { name: 'Make Jonas Weber a member' })).toBeVisible()
+    await expect(jonas.page.getByRole('button', { name: 'Remove Mia Costa' })).toBeVisible(POLL)
+    await expect(jonas.page.getByRole('button', { name: 'Regenerate' })).toBeVisible()
+    await expect(mia.page.getByRole('button', { name: /^Remove/ })).toHaveCount(0)
+
+    // With two owners, either may leave or step down. Priya steps down and keeps her place.
+    await expect(priya.page.getByRole('button', { name: 'Leave this trip' })).toBeVisible()
+    await priya.page.getByRole('button', { name: 'Step down as owner' }).click()
+    await priya.page.getByRole('alertdialog').getByRole('button', { name: 'Step down as owner' }).click()
+    await expect(priya.page.getByText('You are no longer an owner.')).toBeVisible()
+    await expect(priya.page.getByRole('button', { name: /^Remove/ })).toHaveCount(0)
+    await expect(memberRow(priya.page, 'Priya Nair')).not.toContainText('owner')
+
+    // Jonas is now the only owner: he cannot step down or leave, but can hand it to someone.
+    await expect(jonas.page.getByRole('button', { name: 'Step down as owner' })).toHaveCount(0, POLL)
+    await expect(jonas.page.getByRole('button', { name: 'Leave this trip' })).toHaveCount(0)
+    await expect(jonas.page.getByRole('button', { name: 'Make Priya Nair an owner' })).toBeVisible()
 
     await closeAll(priya, jonas, mia)
   })

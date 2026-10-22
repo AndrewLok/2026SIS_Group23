@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Field } from '@/components/common/Field'
 import { useSession } from '@/hooks/useSession'
+import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { features } from '@/services/client'
 import { ApiError } from '@/types'
 
@@ -86,7 +87,8 @@ export function LoginPage() {
   const busy = form.formState.isSubmitting || demoPending
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-10">
+    <div className="relative flex min-h-dvh items-center justify-center px-4 py-10">
+      <ThemeToggle className="absolute right-3 top-3" />
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="instrument-value text-4xl leading-none text-radium">VOYAGER</h1>
@@ -176,9 +178,6 @@ export function LoginPage() {
                 ) : null}
                 Try the demo trip
               </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                Opens a seeded trip with five members. Everything in it is made up.
-              </p>
             </>
           ) : null}
         </form>

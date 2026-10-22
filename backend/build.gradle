@@ -25,7 +25,13 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-websocket-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	runtimeOnly 'com.h2database:h2'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
+	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+	runtimeOnly 'org.postgresql:postgresql'
+	// H2 is for the `h2` profile (no database to install, empty on every start) and for the tests.
+	// developmentOnly keeps it out of the jar that gets deployed.
+	developmentOnly 'com.h2database:h2'
+	testRuntimeOnly 'com.h2database:h2'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 }
 

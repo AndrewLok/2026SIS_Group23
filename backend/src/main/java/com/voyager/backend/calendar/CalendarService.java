@@ -7,6 +7,7 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
@@ -14,16 +15,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.voyager.backend.activities.Idea;
 import com.voyager.backend.activities.IdeaRepository;
+import com.voyager.backend.bookings.Booking;
+import com.voyager.backend.bookings.BookingRepository;
+import com.voyager.backend.bookings.BookingType;
 import com.voyager.backend.calendar.IcsWriter.Event;
 import com.voyager.backend.common.ApiException;
 import com.voyager.backend.trip.Trip;
 import com.voyager.backend.trip.TripMemberRepository;
 import com.voyager.backend.trip.TripRepository;
+import com.voyager.backend.user.UserRepository;
 
 // The trip calendar as a file, two ways: a download for the signed-in person, and a link a calendar
 // app can subscribe to. Both are built the same way, from what is already stored. Nothing about the
 // calendar itself is stored: it is the activities that are going ahead and have a start time, which
-// is the same rule the frontend's calendar uses (lib/calendar.ts).
+// is the same rule the frontend's calendar uses (lib/calendar.ts), plus bookings that have a time.
 //
 //   - Only people on the trip get either. For anyone else the trip does not exist (404).
 //   - The subscription link carries a secret token. A token that is unknown, malformed, replaced, or
@@ -47,13 +52,17 @@ public class CalendarService {
 
     private final CalendarFeedRepository feeds;
     private final IdeaRepository ideas;
+    private final BookingRepository bookings;
+    private final UserRepository users;
     private final TripRepository trips;
     private final TripMemberRepository members;
 
-    public CalendarService(CalendarFeedRepository feeds, IdeaRepository ideas, TripRepository trips,
-            TripMemberRepository members) {
+    public CalendarService(CalendarFeedRepository feeds, IdeaRepository ideas, BookingRepository bookings,
+            UserRepository users, TripRepository trips, TripMemberRepository members) {
         this.feeds = feeds;
         this.ideas = ideas;
+        this.bookings = bookings;
+        this.users = users;
         this.trips = trips;
         this.members = members;
     }
@@ -133,10 +142,16 @@ public class CalendarService {
 
     private Document build(UUID tripId, UUID viewerId, java.util.function.Supplier<ApiException> missing) {
         Trip trip = trips.findById(tripId).orElseThrow(missing);
-        List<Event> events = ideas.findByTripId(tripId).stream()
+        Stream<Event> fromIdeas = ideas.findByTripId(tripId).stream()
                 .filter(idea -> idea.getStatus().onThePlan() && idea.getProposedStart() != null)
-                .sorted(Comparator.comparing(Idea::getProposedStart).thenComparing(Idea::getId))
-                .map(CalendarService::eventOf)
+                .map(CalendarService::eventOf);
+        // Bookings with a time, for everyone on the trip: the ones that belong to one person are
+        // marked as theirs, exactly as they are on the Bookings screen, not left out.
+        Stream<Event> fromBookings = bookings.findByTripId(tripId).stream()
+                .filter(booking -> booking.getStartsAt() != null)
+                .map(this::eventOf);
+        List<Event> events = Stream.concat(fromIdeas, fromBookings)
+                .sorted(Comparator.comparing(Event::start).thenComparing(Event::uid))
                 .toList();
         return new Document(trip.getName(), IcsWriter.calendar(trip.getName(), events));
     }
@@ -150,6 +165,33 @@ public class CalendarService {
                 idea.isAllDay(),
                 idea.getTitle(),
                 idea.getDescription(),
+                null,
                 idea.getCategory().name().toLowerCase(java.util.Locale.ROOT));
+    }
+
+    // The booking's reference and notes are left out on purpose. The link is a bearer address that
+    // can be pasted around, and a booking reference lets whoever holds it manage the booking, and
+    // notes are where people keep door codes. Both stay on the Bookings screen.
+    private Event eventOf(Booking booking) {
+        String owner = booking.getBelongsTo() == null ? null
+                : users.findById(booking.getBelongsTo()).map(u -> u.getDisplayName() + "'s booking").orElse("Personal booking");
+        boolean stay = booking.getType() == BookingType.STAY;
+        String route = stay || (booking.getOrigin().isBlank() && booking.getDestination().isBlank()) ? null
+                : booking.getOrigin().isBlank() ? booking.getDestination()
+                : booking.getDestination().isBlank() ? booking.getOrigin()
+                : booking.getOrigin() + " to " + booking.getDestination();
+        String description = Stream.of(owner, booking.getProvider(), route)
+                .filter(part -> part != null && !part.isBlank())
+                .collect(java.util.stream.Collectors.joining(" \u00b7 "));
+        return new Event(
+                "booking-" + booking.getId() + "@voyager",
+                booking.getCreatedAt(),
+                booking.getStartsAt(),
+                booking.getEndsAt(),
+                false,
+                booking.getTitle(),
+                description,
+                stay ? booking.getDestination() : null,
+                booking.getType().wire());
     }
 }

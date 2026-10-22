@@ -43,6 +43,8 @@ export type Trip = {
   defaultPricePerLitreCents: number
   /** Trip setting: hide settlement rows that do not involve the current user. */
   privateDebts: boolean
+  /** The most the group wants to spend in total, in cents, or null when nobody has set one. */
+  budgetCapCents: number | null
 }
 
 /**
@@ -97,6 +99,8 @@ export type Booking = {
   /** The member whose booking it is; null for a group booking. */
   belongsTo: string | null
   notes: string
+  /** Who typed it in, so the screen knows whether to offer Delete. Null when not known (the mock store). */
+  createdBy: string | null
 }
 
 export type FuelLeg = {
@@ -108,6 +112,8 @@ export type FuelLeg = {
   pricePerLitreCents: number
   driverId: string
   riderIds: string[]
+  /** Who added the leg, so the screen knows whether to offer Delete. Null when not known (the mock store). */
+  createdBy: string | null
   createdAt: string
 }
 
@@ -135,6 +141,8 @@ export type Expense = {
   /** The fuel leg id when source is 'fuel'. */
   sourceId: string | null
   split: ExpenseSplit | null
+  /** Who typed it in, so the screen knows whether to offer Delete. Null when not known (the mock store, fuel). */
+  createdBy: string | null
 }
 
 export type Channel = {
@@ -181,6 +189,7 @@ export type TripRow = {
   default_efficiency: number
   default_price_per_litre_cents: number
   private_debts: boolean
+  budget_cap_cents?: number | null
 }
 
 export type TripMemberRow = {
@@ -227,6 +236,7 @@ export type BookingRow = {
   cost_cents: number | null
   belongs_to: string | null
   notes: string
+  created_by?: string | null
 }
 
 export type FuelLegRow = {
@@ -238,6 +248,7 @@ export type FuelLegRow = {
   price_per_litre_cents: number
   driver_id: string
   rider_ids: string[]
+  created_by?: string | null
   created_at: string
 }
 
@@ -257,6 +268,7 @@ export type ExpenseRow = {
   source_id: string | null
   /** Optional so rows saved before custom splits existed still load. */
   split?: ExpenseSplitRow | null
+  created_by?: string | null
 }
 
 export type ChannelRow = {
@@ -296,6 +308,7 @@ export const toTrip = (r: TripRow): Trip => ({
   defaultEfficiency: r.default_efficiency,
   defaultPricePerLitreCents: r.default_price_per_litre_cents,
   privateDebts: r.private_debts,
+  budgetCapCents: r.budget_cap_cents ?? null,
 })
 
 export const toTripMember = (r: TripMemberRow): TripMember => ({
@@ -341,6 +354,7 @@ export const toBooking = (r: BookingRow): Booking => ({
   costCents: r.cost_cents,
   belongsTo: r.belongs_to,
   notes: r.notes,
+  createdBy: r.created_by ?? null,
 })
 
 export const toFuelLeg = (r: FuelLegRow): FuelLeg => ({
@@ -352,6 +366,7 @@ export const toFuelLeg = (r: FuelLegRow): FuelLeg => ({
   pricePerLitreCents: r.price_per_litre_cents,
   driverId: r.driver_id,
   riderIds: [...r.rider_ids],
+  createdBy: r.created_by ?? null,
   createdAt: r.created_at,
 })
 
@@ -376,6 +391,7 @@ export const toExpense = (r: ExpenseRow): Expense => ({
   source: r.source,
   sourceId: r.source_id,
   split: r.split ? toExpenseSplit(r.split) : null,
+  createdBy: r.created_by ?? null,
 })
 
 export const toChannel = (r: ChannelRow): Channel => ({

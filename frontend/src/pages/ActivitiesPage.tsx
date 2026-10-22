@@ -9,7 +9,10 @@ import {
   Compass,
   Lightbulb,
   Loader2,
+  Pencil,
   Plus,
+  RotateCcw,
+  Ban,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -48,11 +51,15 @@ import {
   useMembers,
   useRemoveIdea,
   useSetAttending,
+  useSetIdeaStatus,
+  useUpdateIdea,
   useVotes,
 } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
 import { agreeThreshold, isOnThePlan, needsADate, tally } from '@/lib/voting'
-import { formatDayTime } from '@/lib/dates'
+import { formatWhen, isoToLocalInput } from '@/lib/dates'
+import { ideaEditProblem, ideaPatch } from '@/lib/ideaEdit'
+import type { IdeaEditForm } from '@/lib/ideaEdit'
 import { messageFor } from '@/lib/errors'
 import type { Idea, IdeaCategory, Profile, Vote } from '@/types'
 
@@ -117,6 +124,259 @@ function DeleteButton({ idea, tripId }: { idea: Idea; tripId: string }) {
   )
 }
 
+/** Rule an activity out, or put it back to the group. Only the person who added it, or the owner. */
+function StatusButton({ idea, tripId }: { idea: Idea; tripId: string }) {
+  const setStatus = useSetIdeaStatus(tripId)
+  const ruledOut = idea.status === 'rejected'
+  const next = ruledOut ? 'voting' : 'rejected'
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-11 text-placard"
+      disabled={setStatus.isPending}
+      onClick={async () => {
+        // Awaited rather than given callbacks: ruling an idea out moves it to another tab, which
+        // removes this button, and callbacks of a button that is gone never run.
+        try {
+          await setStatus.mutateAsync({ ideaId: idea.id, status: next })
+          toast.success(ruledOut ? 'Put back to a vote.' : 'Ruled out. You can put it back later.')
+        } catch (error) {
+          toast.error(messageFor(error, 'Could not change that. Try again.'))
+        }
+      }}
+    >
+      {ruledOut ? (
+        <RotateCcw size={14} aria-hidden="true" />
+      ) : (
+        <Ban size={14} aria-hidden="true" />
+      )}
+      <span className="sr-only">
+        {ruledOut ? `Put ${idea.title} back to a vote` : `Rule out ${idea.title}`}
+      </span>
+    </Button>
+  )
+}
+
+/**
+ * Change what an activity says: its title, notes, category, time and, once it is going ahead, who is
+ * going. The status is not here: that is the votes' to change, or the rule out button's.
+ */
+function EditActivityDrawer({
+  idea,
+  tripId,
+  members,
+  userId,
+}: {
+  idea: Idea
+  tripId: string
+  members: Profile[]
+  userId: string
+}) {
+  const [open, setOpen] = React.useState(false)
+  const update = useUpdateIdea(tripId)
+  const onThePlan = isOnThePlan(idea)
+
+  const initial = (): IdeaEditForm => ({
+    title: idea.title,
+    description: idea.description,
+    category: idea.category,
+    proposedStart: idea.proposedStart ? isoToLocalInput(idea.proposedStart) : '',
+    proposedEnd: idea.proposedEnd ? isoToLocalInput(idea.proposedEnd) : '',
+    allDay: idea.allDay,
+    attendeeIds: idea.attendeeIds,
+  })
+  const [form, setForm] = React.useState<IdeaEditForm>(initial)
+  const [problem, setProblem] = React.useState<{ field: string; message: string } | null>(null)
+  const set = <K extends keyof IdeaEditForm>(key: K, value: IdeaEditForm[K]) => {
+    setProblem(null)
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+  const errorFor = (field: string) => (problem?.field === field ? problem.message : undefined)
+
+  // Opening it starts from what the activity says now, not from what an earlier look left behind.
+  const onOpenChange = (next: boolean) => {
+    if (next) {
+      setForm(initial())
+      setProblem(null)
+    }
+    setOpen(next)
+  }
+
+  // Someone who leaves while the form is open is not on the list to tick, so they are not sent either.
+  const memberIds = members.map((m) => m.id)
+  const going = form.attendeeIds.filter((id) => memberIds.includes(id))
+
+  const toggleAttendee = (id: string) =>
+    set('attendeeIds', going.includes(id) ? going.filter((a) => a !== id) : [...going, id])
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const submitted = { ...form, attendeeIds: going }
+    const found = ideaEditProblem(idea, submitted)
+    if (found) {
+      setProblem(found)
+      return
+    }
+    const patch = ideaPatch(idea, submitted, onThePlan)
+    if (Object.keys(patch).length === 0) {
+      setOpen(false)
+      return
+    }
+    try {
+      await update.mutateAsync({ ideaId: idea.id, patch })
+      toast.success('Activity changed.')
+      setOpen(false)
+    } catch (error) {
+      toast.error(messageFor(error, 'Could not change that activity.'))
+    }
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerTrigger asChild>
+        <Button variant="ghost" size="icon" className="size-11 text-placard">
+          <Pencil size={14} aria-hidden="true" />
+          <span className="sr-only">Edit {idea.title}</span>
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent>
+        <div className="mx-auto w-full max-w-md overflow-y-auto">
+          <DrawerHeader>
+            <DrawerTitle>Edit activity</DrawerTitle>
+            <DrawerDescription>
+              {onThePlan
+                ? 'Changes show on the plan and the calendar straight away.'
+                : 'Votes already cast stay as they are.'}
+            </DrawerDescription>
+          </DrawerHeader>
+          <form onSubmit={submit} className="flex flex-col gap-5 px-4" noValidate>
+            <Field label="What is it" error={errorFor('title')} required>
+              {({ id, describedBy, invalid }) => (
+                <Input
+                  id={id}
+                  value={form.title}
+                  maxLength={TITLE_MAX}
+                  aria-describedby={describedBy}
+                  aria-invalid={invalid}
+                  onChange={(e) => set('title', e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Anything the group should know">
+              {({ id }) => (
+                <Textarea
+                  id={id}
+                  rows={3}
+                  value={form.description}
+                  maxLength={DESCRIPTION_MAX}
+                  onChange={(e) => set('description', e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Category">
+              {({ id }) => (
+                <Select
+                  value={form.category}
+                  onValueChange={(v) => set('category', v as IdeaCategory)}
+                >
+                  <SelectTrigger id={id}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
+            <Field
+              label="When"
+              required={idea.status === 'planned'}
+              error={errorFor('proposedStart')}
+              hint={
+                idea.status === 'planned'
+                  ? undefined
+                  : 'Optional. Without a date it cannot go on the calendar yet.'
+              }
+            >
+              {({ id, describedBy, invalid }) => (
+                <Input
+                  id={id}
+                  type="datetime-local"
+                  value={form.proposedStart}
+                  aria-describedby={describedBy}
+                  aria-invalid={invalid}
+                  onChange={(e) => set('proposedStart', e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Ends" error={errorFor('proposedEnd')} hint="Optional.">
+              {({ id, describedBy, invalid }) => (
+                <Input
+                  id={id}
+                  type="datetime-local"
+                  value={form.proposedEnd}
+                  aria-describedby={describedBy}
+                  aria-invalid={invalid}
+                  onChange={(e) => set('proposedEnd', e.target.value)}
+                />
+              )}
+            </Field>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id={`all-day-${idea.id}`}
+                checked={form.allDay}
+                onCheckedChange={(checked) => set('allDay', checked === true)}
+              />
+              <Label htmlFor={`all-day-${idea.id}`} className="text-sm font-normal">
+                All day
+                <span className="block text-xs text-muted-foreground">
+                  The calendar shows the day, not the time.
+                </span>
+              </Label>
+            </div>
+
+            {onThePlan ? (
+              <fieldset className="flex flex-col gap-3">
+                <legend className="placard caption mb-3">Who is going</legend>
+                {members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-3">
+                    <Checkbox
+                      id={`edit-attendee-${idea.id}-${m.id}`}
+                      checked={going.includes(m.id)}
+                      onCheckedChange={() => toggleAttendee(m.id)}
+                    />
+                    <Label
+                      htmlFor={`edit-attendee-${idea.id}-${m.id}`}
+                      className="text-sm font-normal"
+                    >
+                      {m.displayName}
+                      {m.id === userId ? ' (you)' : ''}
+                    </Label>
+                  </div>
+                ))}
+              </fieldset>
+            ) : null}
+
+            <DrawerFooter className="px-0">
+              <Button type="submit" disabled={update.isPending}>
+                {update.isPending ? (
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                ) : null}
+                Save changes
+              </Button>
+            </DrawerFooter>
+          </form>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
 function ActivityHeading({ idea }: { idea: Idea }) {
   return (
     <div className="flex items-start justify-between gap-3">
@@ -135,16 +395,21 @@ function ActivityHeading({ idea }: { idea: Idea }) {
 function PlanRow({
   idea,
   profiles,
+  members,
   userId,
   tripId,
   isOwner,
 }: {
   idea: Idea
   profiles: Map<string, Profile>
+  members: Profile[]
   userId: string
   tripId: string
   isOwner: boolean
 }) {
+  // The server decides, and says so if it is not allowed; this only keeps the buttons off the ones
+  // that would be refused. The owner can change anyone's activity; everyone else only their own.
+  const canManage = idea.proposedBy === userId || isOwner
   const setAttending = useSetAttending(tripId, userId)
   const creator = profiles.get(idea.proposedBy)
   const going = idea.attendeeIds.includes(userId)
@@ -162,7 +427,7 @@ function PlanRow({
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
         {idea.proposedStart ? (
-          <span className="tabular text-foreground">{formatDayTime(idea.proposedStart)}</span>
+          <span className="tabular text-foreground">{formatWhen(idea.proposedStart, idea.proposedEnd, idea.allDay)}</span>
         ) : (
           <span className="text-placard">No date yet</span>
         )}
@@ -174,7 +439,7 @@ function PlanRow({
 
       <PeopleList ids={idea.attendeeIds} profiles={profiles} label="Going" />
 
-      <div className="flex items-center justify-between gap-3 border-t border-bezel pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-bezel pt-3">
         <span className="tabular text-xs text-muted-foreground">
           {count === 0
             ? 'Nobody going yet'
@@ -185,7 +450,13 @@ function PlanRow({
               : `${count} going`}
         </span>
         <div className="flex items-center gap-2">
-          {idea.proposedBy === userId || isOwner ? <DeleteButton idea={idea} tripId={tripId} /> : null}
+          {canManage ? (
+            <>
+              <EditActivityDrawer idea={idea} tripId={tripId} members={members} userId={userId} />
+              {idea.status === 'agreed' ? <StatusButton idea={idea} tripId={tripId} /> : null}
+              <DeleteButton idea={idea} tripId={tripId} />
+            </>
+          ) : null}
           {going ? (
             <Button variant="outline" size="sm" className="min-h-11" onClick={toggle}>
               I'm out
@@ -207,6 +478,7 @@ function VoteRow({
   idea,
   votes,
   profiles,
+  members,
   memberCount,
   userId,
   tripId,
@@ -215,11 +487,13 @@ function VoteRow({
   idea: Idea
   votes: Vote[]
   profiles: Map<string, Profile>
+  members: Profile[]
   memberCount: number
   userId: string
   tripId: string
   isOwner: boolean
 }) {
+  const canManage = idea.proposedBy === userId || isOwner
   const cast = useCastVote(tripId, userId)
   const t = tally(votes, idea.id, userId)
   const threshold = agreeThreshold(memberCount)
@@ -240,7 +514,7 @@ function VoteRow({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
         <span>Proposed by {proposer?.displayName ?? 'a member'}</span>
         {idea.proposedStart ? (
-          <span className="tabular">{formatDayTime(idea.proposedStart)}</span>
+          <span className="tabular">{formatWhen(idea.proposedStart, idea.proposedEnd, idea.allDay)}</span>
         ) : (
           <span className="text-placard">No date yet</span>
         )}
@@ -251,12 +525,18 @@ function VoteRow({
         <PeopleList ids={t.disagreeIds} profiles={profiles} label="Against" />
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-bezel pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-bezel pt-3">
         <span className="tabular text-xs text-muted-foreground">
           {t.agree} of {threshold} needed
         </span>
         <div className="flex items-center gap-2">
-          {idea.proposedBy === userId || isOwner ? <DeleteButton idea={idea} tripId={tripId} /> : null}
+          {canManage ? (
+            <>
+              <EditActivityDrawer idea={idea} tripId={tripId} members={members} userId={userId} />
+              <StatusButton idea={idea} tripId={tripId} />
+              <DeleteButton idea={idea} tripId={tripId} />
+            </>
+          ) : null}
           <Button
             variant={t.own === -1 ? 'default' : 'outline'}
             size="sm"
@@ -542,8 +822,8 @@ export function ActivitiesPage() {
 
   // The trip's owner can delete anyone's activity; everyone else only their own.
   const isOwner = (members.data ?? []).some((m) => m.userId === userId && m.role === 'owner')
-  const planProps = { profiles, userId, tripId, isOwner }
-  const voteProps = { votes: allVotes, profiles, memberCount, userId, tripId, isOwner }
+  const planProps = { profiles, members: memberProfiles, userId, tripId, isOwner }
+  const voteProps = { votes: allVotes, profiles, members: memberProfiles, memberCount, userId, tripId, isOwner }
 
   return (
     <div className="flex flex-col gap-6">

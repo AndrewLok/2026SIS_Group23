@@ -58,3 +58,20 @@ export function spendProgress(spentCents: number, estimateCents: number): number
   if (estimateCents <= 0) return 0
   return Math.min(100, Math.round((spentCents / estimateCents) * 100))
 }
+
+/**
+ * What the budget dial and the spend bar measure against. If the group set a cap, that is the
+ * budget: the most they want to spend, however the estimate comes out. Otherwise it is the estimate.
+ * `overCapBy` is how far the estimate already runs past the cap (0 when it does not), so the screen
+ * can say so before any money is spent.
+ */
+export type Budget = {
+  totalCents: number
+  kind: 'cap' | 'estimate'
+  overCapBy: number
+}
+
+export function budgetFor(capCents: number | null, estimateCents: number): Budget {
+  if (capCents === null) return { totalCents: estimateCents, kind: 'estimate', overCapBy: 0 }
+  return { totalCents: capCents, kind: 'cap', overCapBy: Math.max(0, estimateCents - capCents) }
+}

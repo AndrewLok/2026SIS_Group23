@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Fuel, Loader2, Plus, Receipt, Trash2 } from 'lucide-react'
+import { Fuel, Loader2, Pencil, Plus, Receipt, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -50,6 +50,7 @@ import {
   useMembers,
   useRemoveExpense,
   useTrip,
+  useUpdateExpense,
   useUpdateTrip,
 } from '@/hooks/queries'
 import { useCurrentUserId } from '@/hooks/useSession'
@@ -61,8 +62,9 @@ import {
   totalSpent,
   transfersInvolving,
 } from '@/lib/balances'
-import { estimateTrip, spendProgress } from '@/lib/estimate'
-import { dayKey, dayToIso, formatDay, isUnderway, todayAsDay } from '@/lib/dates'
+import { budgetFor, estimateTrip, spendProgress } from '@/lib/estimate'
+import { dayKey, dayToIso, formatDay, isUnderway, isoToDay, todayAsDay } from '@/lib/dates'
+import { expensePatch, peopleFor, splitStateOf } from '@/lib/expenseEdit'
 import { messageFor } from '@/lib/errors'
 import { formatMoney, splitEvenly } from '@/lib/money'
 import { cn } from '@/lib/utils'
@@ -70,8 +72,14 @@ import type { Expense, ExpenseCategory, ExpenseSplit, Profile } from '@/types'
 
 const categories: ExpenseCategory[] = ['food', 'transport', 'tickets', 'stay', 'other']
 
+// The same limit the server enforces (Limits.EXPENSE_DESCRIPTION).
+const DESCRIPTION_MAX = 100
+
 const expenseSchema = z.object({
-  description: z.string().min(1, 'Say what the money went on.'),
+  description: z
+    .string()
+    .min(1, 'Say what the money went on.')
+    .max(DESCRIPTION_MAX, `Keep it to ${DESCRIPTION_MAX} characters or fewer.`),
   category: z.enum(['food', 'transport', 'tickets', 'stay', 'other']),
   paidBy: z.string().min(1),
   spentAt: z.string().min(1, 'Pick a date.'),
@@ -79,40 +87,59 @@ const expenseSchema = z.object({
 
 type SplitMode = 'equal' | 'exact'
 
-function AddExpenseDrawer({
+/**
+ * Adds an expense, or with `expense` given edits one. Editing sends only what changed, and leaves
+ * the split alone unless it was touched: anyone who has left the trip but is still in it stays in it.
+ */
+function ExpenseDrawer({
   tripId,
   members,
   userId,
+  expense,
+  trigger,
 }: {
   tripId: string
   members: Profile[]
   userId: string
+  expense?: Expense
+  trigger: React.ReactNode
 }) {
+  const editing = expense !== undefined
   const [open, setOpen] = React.useState(false)
-  const [amountCents, setAmountCents] = React.useState<number | null>(null)
+  const memberIds = React.useMemo(() => members.map((m) => m.id), [members])
+  // The people to show: the members, plus anyone who left but is still the payer or in the split.
+  const people = React.useMemo(() => peopleFor(expense, members), [expense, members])
+  const everyone = React.useMemo(() => people.map((m) => m.id), [people])
+  const start = splitStateOf(expense?.split ?? null, memberIds)
+  const [amountCents, setAmountCents] = React.useState<number | null>(expense?.amountCents ?? null)
   const [amountError, setAmountError] = React.useState<string | null>(null)
-  const [mode, setMode] = React.useState<SplitMode>('equal')
-  const everyone = React.useMemo(() => members.map((m) => m.id), [members])
-  const [sharerIds, setSharerIds] = React.useState<string[]>(everyone)
-  const [owed, setOwed] = React.useState<Record<string, number | null>>({})
+  const [mode, setMode] = React.useState<SplitMode>(start.mode)
+  const [pickedIds, setPickedIds] = React.useState<string[]>(start.pickedIds)
+  // Someone who leaves while the form is open is no longer on the list to tick, so they are dropped
+  // here too, instead of being sent along and refused.
+  const sharerIds = pickedIds.filter((id) => everyone.includes(id))
+  const [owed, setOwed] = React.useState<Record<string, number | null>>(start.owed)
   const [splitError, setSplitError] = React.useState<string | null>(null)
   const create = useCreateExpense(tripId)
+  const update = useUpdateExpense(tripId)
+
+  const initialValues = (): z.infer<typeof expenseSchema> => ({
+    description: expense?.description ?? '',
+    category: expense?.category ?? 'food',
+    paidBy: expense?.paidBy ?? userId,
+    spentAt: expense ? isoToDay(expense.spentAt) : todayAsDay(),
+  })
 
   const form = useForm<z.infer<typeof expenseSchema>>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: {
-      description: '',
-      category: 'food',
-      paidBy: userId,
-      spentAt: todayAsDay(),
-    },
+    defaultValues: initialValues(),
   })
 
   const paidBy = form.watch('paidBy')
   const payerIsYou = paidBy === userId
   const payerName = payerIsYou
     ? 'you'
-    : (members.find((m) => m.id === paidBy)?.displayName ?? 'the payer')
+    : (people.find((m) => m.id === paidBy)?.displayName ?? 'the payer')
   const total = amountCents ?? 0
 
   /*
@@ -123,7 +150,7 @@ function AddExpenseDrawer({
   const sortedSharers = [...sharerIds].sort()
   const parts = splitEvenly(total, sortedSharers.length)
   const equalShare = new Map(sortedSharers.map((id, i) => [id, parts[i] ?? 0]))
-  const owers = members.filter((m) => m.id !== paidBy)
+  const owers = people.filter((m) => m.id !== paidBy)
   const owedTotal = owers.reduce((sum, m) => sum + (owed[m.id] ?? 0), 0)
   const owedToPayer =
     mode === 'equal' ? total - (equalShare.get(paidBy) ?? 0) : Math.min(owedTotal, total)
@@ -131,18 +158,20 @@ function AddExpenseDrawer({
 
   const toggleSharer = (id: string) => {
     setSplitError(null)
-    setSharerIds((current) =>
-      current.includes(id) ? current.filter((s) => s !== id) : [...current, id],
+    setPickedIds(() =>
+      sharerIds.includes(id) ? sharerIds.filter((s) => s !== id) : [...sharerIds, id],
     )
   }
 
+  /** Back to the starting point: empty when adding, the expense as it stands now when editing. */
   const startOver = () => {
-    form.reset()
-    setAmountCents(null)
+    const fresh = splitStateOf(expense?.split ?? null, memberIds)
+    form.reset(initialValues())
+    setAmountCents(expense?.amountCents ?? null)
     setAmountError(null)
-    setMode('equal')
-    setSharerIds(everyone)
-    setOwed({})
+    setMode(fresh.mode)
+    setPickedIds(fresh.pickedIds)
+    setOwed(fresh.owed)
     setSplitError(null)
   }
 
@@ -177,6 +206,17 @@ function AddExpenseDrawer({
       return
     }
     try {
+      if (expense) {
+        const patch = expensePatch(expense, values, amountCents, split, memberIds)
+        if (Object.keys(patch).length === 0) {
+          setOpen(false)
+          return
+        }
+        await update.mutateAsync({ expenseId: expense.id, patch })
+        toast.success('Expense changed. Balances updated.')
+        setOpen(false)
+        return
+      }
       await create.mutateAsync({
         description: values.description,
         amountCents,
@@ -188,25 +228,29 @@ function AddExpenseDrawer({
       toast.success('Expense added. Balances updated.')
       setOpen(false)
       startOver()
-    } catch {
-      toast.error('Could not add that expense.')
+    } catch (error) {
+      toast.error(messageFor(error, editing ? 'Could not change that expense.' : 'Could not add that expense.'))
     }
   })
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-        <Button className="min-h-11">
-          <Plus size={16} aria-hidden="true" />
-          Add expense
-        </Button>
-      </DrawerTrigger>
+    <Drawer
+      open={open}
+      onOpenChange={(next) => {
+        // Opening an edit starts from the expense as it is now, not as it was when the page loaded.
+        if (next && editing) startOver()
+        setOpen(next)
+      }}
+    >
+      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-md overflow-y-auto">
           <DrawerHeader>
-            <DrawerTitle>Add an expense</DrawerTitle>
+            <DrawerTitle>{editing ? 'Change this expense' : 'Add an expense'}</DrawerTitle>
             <DrawerDescription>
-              Choose who owes for it. Split it equally, or say exactly what each person owes.
+              {editing
+                ? 'Balances are worked out again from what you save.'
+                : 'Choose who owes for it. Split it equally, or say exactly what each person owes.'}
             </DrawerDescription>
           </DrawerHeader>
           <form onSubmit={submit} className="flex flex-col gap-5 px-4" noValidate>
@@ -215,6 +259,7 @@ function AddExpenseDrawer({
                 <Input
                   id={id}
                   placeholder="Groceries at Colac"
+                  maxLength={DESCRIPTION_MAX}
                   aria-describedby={describedBy}
                   aria-invalid={invalid}
                   {...form.register('description')}
@@ -251,7 +296,7 @@ function AddExpenseDrawer({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {members.map((m) => (
+                      {people.map((m) => (
                         <SelectItem key={m.id} value={m.id}>
                           {m.displayName}
                           {m.id === userId ? ' (you)' : ''}
@@ -282,7 +327,7 @@ function AddExpenseDrawer({
 
               {mode === 'equal' ? (
                 <ul className="flex flex-col gap-1">
-                  {members.map((m) => {
+                  {people.map((m) => {
                     const ticked = sharerIds.includes(m.id)
                     return (
                       <li key={m.id} className="flex min-h-9 items-center gap-3">
@@ -377,7 +422,7 @@ function AddExpenseDrawer({
                 {form.formState.isSubmitting ? (
                   <Loader2 size={15} className="animate-spin" aria-hidden="true" />
                 ) : null}
-                Add expense
+                {editing ? 'Save changes' : 'Add expense'}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
                 Voyager does not move any money.
@@ -397,7 +442,9 @@ function ExpenseRow({
   memberIds,
   fuelLegs,
   tripId,
+  canDelete,
   onDelete,
+  edit,
 }: {
   expense: Expense
   profiles: Map<string, Profile>
@@ -405,7 +452,10 @@ function ExpenseRow({
   memberIds: string[]
   fuelLegs: Parameters<typeof shareForMember>[3]
   tripId: string
+  canDelete: boolean
   onDelete: (id: string) => void
+  /** The edit drawer's trigger, shown to whoever may delete it too: the server allows the same people. */
+  edit: React.ReactNode
 }) {
   const payer = profiles.get(expense.paidBy)
   const myShare = shareForMember(expense, userId, memberIds, fuelLegs)
@@ -442,7 +492,8 @@ function ExpenseRow({
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span className="tabular text-sm">{formatMoney(expense.amountCents)}</span>
-        {!fromFuel ? (
+        {!fromFuel && canDelete ? edit : null}
+        {!fromFuel && canDelete ? (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="size-11 text-placard">
@@ -477,7 +528,8 @@ export function ExpensesPage() {
   const userId = useCurrentUserId()
 
   const trip = useTrip(tripId)
-  const members = useMembers(tripId)
+  // Live: an even split is shared by whoever is on the trip right now.
+  const members = useMembers(tripId, true)
   const expenses = useExpenses(tripId)
   const fuelLegs = useFuelLegs(tripId)
   const bookings = useBookings(tripId)
@@ -488,6 +540,11 @@ export function ExpensesPage() {
     () => new Map((members.data ?? []).map((m) => [m.userId, m.profile])),
     [members.data],
   )
+  const isOwner = (members.data ?? []).some((m) => m.userId === userId && m.role === 'owner')
+  // The server decides, and says so if it is not allowed; this only keeps the button off the ones
+  // that would be refused. Null means it is not known who added it (the mock store).
+  const canDelete = (e: Expense): boolean =>
+    isOwner || e.createdBy === null || e.createdBy === userId || e.paidBy === userId
 
   if (trip.isPending || members.isPending || expenses.isPending || fuelLegs.isPending) {
     return <ListSkeleton rows={5} />
@@ -515,6 +572,8 @@ export function ExpensesPage() {
     allowanceCents: trip.data?.allowanceCents ?? 0,
     memberCount: memberIds.length,
   })
+  // The group's cap if it set one, otherwise the estimate.
+  const budget = budgetFor(trip.data?.budgetCapCents ?? null, estimate.totalCents)
   const underway = isUnderway(trip.data?.startDate ?? null, trip.data?.endDate ?? null)
 
   const byDay = new Map<string, Expense[]>()
@@ -534,7 +593,17 @@ export function ExpensesPage() {
         title="Money"
         subtitle={`${formatMoney(spent)} spent so far, across ${memberIds.length} members.`}
         action={
-          <AddExpenseDrawer tripId={tripId} members={memberProfiles} userId={userId} />
+          <ExpenseDrawer
+            tripId={tripId}
+            members={memberProfiles}
+            userId={userId}
+            trigger={
+              <Button className="min-h-11">
+                <Plus size={16} aria-hidden="true" />
+                Add expense
+              </Button>
+            }
+          />
         }
       />
 
@@ -562,15 +631,22 @@ export function ExpensesPage() {
         </p>
       </section>
 
-      {underway ? (
+      {underway || budget.kind === 'cap' ? (
         <section className="plate flex flex-col gap-3 px-5 py-4">
           <div className="flex items-baseline justify-between gap-4">
-            <span className="placard text-xs">Spend against estimate</span>
+            <span className="placard text-xs">
+              {budget.kind === 'cap' ? 'Spend against budget cap' : 'Spend against estimate'}
+            </span>
             <span className="tabular text-sm">
-              {formatMoney(spent)} of {formatMoney(estimate.totalCents)}
+              {formatMoney(spent)} of {formatMoney(budget.totalCents)}
             </span>
           </div>
-          <Progress value={spendProgress(spent, estimate.totalCents)} />
+          <Progress value={spendProgress(spent, budget.totalCents)} />
+          {budget.overCapBy > 0 ? (
+            <p className="text-xs text-caution">
+              The cost estimate is already {formatMoney(budget.overCapBy)} over the cap.
+            </p>
+          ) : null}
         </section>
       ) : null}
 
@@ -660,9 +736,28 @@ export function ExpensesPage() {
                     memberIds={memberIds}
                     fuelLegs={allLegs}
                     tripId={tripId}
+                    canDelete={canDelete(expense)}
+                    edit={
+                      <ExpenseDrawer
+                        tripId={tripId}
+                        members={memberProfiles}
+                        userId={userId}
+                        expense={expense}
+                        trigger={
+                          <Button variant="ghost" size="icon" className="size-11 text-placard">
+                            <Pencil size={15} aria-hidden="true" />
+                            <span className="sr-only">Edit {expense.description}</span>
+                          </Button>
+                        }
+                      />
+                    }
                     onDelete={async (id) => {
-                      await removeExpense.mutateAsync(id)
-                      toast.success('Expense deleted. Balances updated.')
+                      try {
+                        await removeExpense.mutateAsync(id)
+                        toast.success('Expense deleted. Balances updated.')
+                      } catch (error) {
+                        toast.error(messageFor(error, 'Could not delete that expense.'))
+                      }
                     }}
                   />
                 ))}

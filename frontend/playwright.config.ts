@@ -8,8 +8,8 @@ import { defineConfig } from '@playwright/test'
  * One-time setup:  npx playwright install chromium
  *
  * Playwright starts both servers itself and stops them afterwards.
- *   - The backend is `./gradlew bootRun` in ../backend (port 8080). Its database is in memory,
- *     so every run starts empty. If a backend is already running there it is reused; the tests
+ *   - The backend is `./gradlew bootRun` in ../backend (port 8080). It runs with the `h2` profile, so its
+ *     database is in memory and needs nothing installed: every run starts empty. If a backend is already running there it is reused; the tests
  *     use fresh accounts, so leftover data does not matter.
  *   - The frontend gets its own Vite on port 5174 with VITE_USE_MOCK=false, so a `npm run dev`
  *     you already have open on 5173 (in mock mode, say) can never be tested by mistake.
@@ -43,6 +43,8 @@ export default defineConfig({
     {
       command: WINDOWS ? 'gradlew.bat bootRun' : './gradlew bootRun',
       cwd: '../backend',
+      // In-memory H2, so the tests need no Postgres and every run starts empty.
+      env: { SPRING_PROFILES_ACTIVE: 'h2' },
       // Any answer counts as "up"; a signed-out request to /me is a 401.
       url: 'http://127.0.0.1:8080/api/auth/me',
       reuseExistingServer: true,

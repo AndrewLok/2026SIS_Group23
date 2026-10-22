@@ -35,7 +35,7 @@ import {
 import { useCurrentUserId } from '@/hooks/useSession'
 import { computeBalances, totalSpent } from '@/lib/balances'
 import { nextUp, toCalendarItems } from '@/lib/calendar'
-import { estimateTrip } from '@/lib/estimate'
+import { budgetFor, estimateTrip } from '@/lib/estimate'
 import { daysUntil, formatDateRange, isUnderway } from '@/lib/dates'
 import { formatMoney, formatMoneyCompact } from '@/lib/money'
 
@@ -82,7 +82,8 @@ export function TripOverviewPage() {
   const userId = useCurrentUserId()
 
   const trip = useTrip(tripId)
-  const members = useMembers(tripId)
+  // Live: balances and head counts are worked out from who is on the trip right now.
+  const members = useMembers(tripId, true)
   const ideas = useIdeas(tripId)
   const bookings = useBookings(tripId)
   const fuelLegs = useFuelLegs(tripId)
@@ -131,8 +132,9 @@ export function TripOverviewPage() {
   const reach = Math.max(100, ...balances.map((b) => Math.abs(b.netCents)))
 
   /*
-   * The tank is the estimated trip cost; what has been spent drains it. Over
-   * the estimate the needle rests on E and the reading says by how much.
+   * The tank is the group's budget cap if it set one, otherwise the estimated
+   * trip cost; what has been spent drains it. Over it the needle rests on E and
+   * the reading says by how much.
    */
   const estimate = estimateTrip({
     bookings: allBookings,
@@ -140,7 +142,9 @@ export function TripOverviewPage() {
     allowanceCents: trip.data.allowanceCents,
     memberCount: memberIds.length,
   })
-  const tank = estimate.totalCents
+  const budget = budgetFor(trip.data.budgetCapCents, estimate.totalCents)
+  const tank = budget.totalCents
+  const budgetNoun = budget.kind === 'cap' ? 'cap' : 'estimate'
   const left = tank - totalSpent(allExpenses)
   const lowBudget = tank > 0 && left <= tank * LOW_BUDGET
 
@@ -167,16 +171,17 @@ export function TripOverviewPage() {
 
   const budgetWords =
     tank === 0
-      ? 'No budget estimate yet'
+      ? `No budget ${budgetNoun} yet`
       : left >= 0
-        ? `${formatMoney(left)} of the ${formatMoney(tank)} estimate left`
-        : `${formatMoney(-left)} over the ${formatMoney(tank)} estimate`
+        ? `${formatMoney(left)} of the ${formatMoney(tank)} ${budgetNoun} left`
+        : `${formatMoney(-left)} over the ${formatMoney(tank)} ${budgetNoun}`
 
   return (
     <div className="flex flex-col gap-5">
       <h1 className="sr-only">{trip.data.name}</h1>
 
-      <section aria-label="Dashboard" className="-mx-4 flex flex-col md:mx-0">
+      {/* The cluster is a night scene whatever the theme: `night` pins this region to the night palette. */}
+      <section aria-label="Dashboard" className="night -mx-4 flex flex-col md:mx-0">
         <Windscreen tripId={tripId} profiles={profiles} next={next} />
 
         <div className="cowl relative -mt-6 rounded-b-xl rounded-t-[1.75rem] px-3 pb-2 pt-5 md:-mt-10 md:rounded-t-[3rem] md:px-10 md:pt-8">
@@ -247,7 +252,7 @@ export function TripOverviewPage() {
               />
               <span className="placard text-center text-xs leading-none group-hover:text-foreground">
                 {tank === 0
-                  ? 'No estimate yet'
+                  ? `No ${budgetNoun} yet`
                   : left >= 0
                     ? `Left of ${formatMoneyCompact(tank)}`
                     : `Over ${formatMoneyCompact(tank)}`}
@@ -315,10 +320,15 @@ export function TripOverviewPage() {
       </Button>
 
       <p className="max-w-[68ch] text-xs text-muted-foreground md:mx-auto md:text-center">
-        The budget is an estimate, not a quote: {plural(estimate.inputs.bookingsCounted, 'priced booking', 'priced bookings')},{' '}
+        {budget.kind === 'cap'
+          ? `The budget is the cap your group set (${formatMoney(budget.totalCents)}). `
+          : null}
+        {budget.overCapBy > 0
+          ? `The cost estimate is already ${formatMoney(budget.overCapBy)} over it. `
+          : null}
+        The cost estimate adds up {plural(estimate.inputs.bookingsCounted, 'priced booking', 'priced bookings')},{' '}
         {plural(estimate.inputs.fuelLegsCounted, 'fuel leg', 'fuel legs')} and a{' '}
-        {formatMoney(estimate.inputs.allowancePerMemberCents)} allowance each. Everything on this
-        trip is seeded demo data, not real activity.
+        {formatMoney(estimate.inputs.allowancePerMemberCents)} allowance each.
       </p>
     </div>
   )

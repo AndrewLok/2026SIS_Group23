@@ -13,6 +13,7 @@ import {
   MessageSquare,
   MoreVertical,
   Plane,
+  Settings,
   Users,
   Wallet,
 } from 'lucide-react'
@@ -25,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { useSession } from '@/hooks/useSession'
 import { useTrip } from '@/hooks/queries'
 import { cn } from '@/lib/utils'
@@ -69,6 +71,7 @@ function TopBar({ tripId }: { tripId: string }) {
         <p className="min-w-0 flex-1 truncate text-sm font-medium">
           {trip.data?.name ?? 'Loading trip'}
         </p>
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="size-8 shrink-0">
@@ -80,6 +83,10 @@ function TopBar({ tripId }: { tripId: string }) {
             <DropdownMenuItem onSelect={() => navigate(`/trips/${tripId}/members`)}>
               <Users size={15} aria-hidden="true" />
               Members and invite
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate(`/trips/${tripId}/settings`)}>
+              <Settings size={15} aria-hidden="true" />
+              Trip settings
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate(`/trips/${tripId}/bookings`)}>
               <Plane size={15} aria-hidden="true" />

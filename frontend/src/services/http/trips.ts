@@ -3,11 +3,9 @@
  * the trip functions in services/mock/trips.ts so client.ts can swap one for the other.
  *
  * The backend answers in the shape of the types here (camelCase, ISO date strings, money in cents),
- * so responses are checked rather than converted. Everything fetched is also mirrored into the mock
- * store (see services/mock/bridge.ts) so the screens that are still mock keep working on real trips.
+ * so responses are checked rather than converted.
  */
 
-import { adoptMembers, adoptTrips } from '@/services/mock/bridge'
 import {
   isNumber,
   isRecord,
@@ -61,7 +59,8 @@ function parseTrip(data: unknown): Trip {
     !isNumber(data.allowanceCents) ||
     !isNumber(data.defaultEfficiency) ||
     !isNumber(data.defaultPricePerLitreCents) ||
-    typeof data.privateDebts !== 'boolean'
+    typeof data.privateDebts !== 'boolean' ||
+    !(data.budgetCapCents === null || isNumber(data.budgetCapCents))
   ) {
     throw unexpected()
   }
@@ -75,6 +74,7 @@ function parseTrip(data: unknown): Trip {
     defaultEfficiency: data.defaultEfficiency,
     defaultPricePerLitreCents: data.defaultPricePerLitreCents,
     privateDebts: data.privateDebts,
+    budgetCapCents: data.budgetCapCents,
   }
 }
 
@@ -109,11 +109,8 @@ const parseList = <T>(data: unknown, parseOne: (item: unknown) => T): T[] => {
   return data.map(parseOne)
 }
 
-/** Read a trip out of a response and keep the mock mirror in step. */
 async function readTrip(response: Response): Promise<Trip> {
-  const trip = parseTrip(await readJson(response))
-  adoptTrips([trip])
-  return trip
+  return parseTrip(await readJson(response))
 }
 
 const tripPath = (tripId: string): string => `/trips/${encodeURIComponent(tripId)}`
@@ -123,9 +120,7 @@ const codePath = (code: string): string => encodeURIComponent(code.trim())
 
 /** Every trip the signed-in member is on. */
 export async function list(): Promise<Trip[]> {
-  const trips = parseList(await readJson(await request('GET', '/trips')), parseTrip)
-  adoptTrips(trips)
-  return trips
+  return parseList(await readJson(await request('GET', '/trips')), parseTrip)
 }
 
 export async function get(tripId: string): Promise<Trip> {
@@ -154,6 +149,7 @@ const PATCHABLE = [
   'defaultEfficiency',
   'defaultPricePerLitreCents',
   'privateDebts',
+  'budgetCapCents',
 ] as const
 
 export async function update(tripId: string, patch: Partial<Trip>): Promise<Trip> {
@@ -187,9 +183,7 @@ export async function regenerateCode(tripId: string): Promise<Trip> {
 /* Members */
 
 export async function listMembers(tripId: string): Promise<(TripMember & { profile: Profile })[]> {
-  const members = parseList(await readJson(await request('GET', `${tripPath(tripId)}/members`)), parseMember)
-  adoptMembers(tripId, members)
-  return members
+  return parseList(await readJson(await request('GET', `${tripPath(tripId)}/members`)), parseMember)
 }
 
 /** Removes someone, or leaves the trip when the id is the signed-in member's own. */

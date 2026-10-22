@@ -6,6 +6,7 @@ import { JoinPage } from '@/pages/JoinPage'
 import { TripsPage } from '@/pages/TripsPage'
 import { TripOverviewPage } from '@/pages/TripOverviewPage'
 import { MembersPage } from '@/pages/MembersPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 import { ActivitiesPage } from '@/pages/ActivitiesPage'
 import { CalendarPage } from '@/pages/CalendarPage'
 import { ExpensesPage } from '@/pages/ExpensesPage'
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="trips/:tripId" element={<TripLayout />}>
             <Route index element={<TripOverviewPage />} />
             <Route path="members" element={<MembersPage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="activities" element={<ActivitiesPage />} />
             {/* The old address, kept so saved links still land somewhere. */}
             <Route path="voting" element={<Navigate to="../activities" replace />} />

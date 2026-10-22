@@ -6,20 +6,27 @@ server:
         http-only: true   # JavaScript on the page cannot read the login cookie.
         same-site: lax    # Not sent on cross-site POSTs. This is what stands in for CSRF tokens.
         max-age: 14d      # Survives closing the browser, so a phone stays signed in for the whole trip.
-        # secure: true    # Turn on once this is served over HTTPS; it has to stay off for http://localhost.
+        secure: ${COOKIE_SECURE:false}   # Set COOKIE_SECURE=true once this is served over HTTPS; it has to stay off for http://localhost.
 
 spring:
   application:
     name: voyager-backend
   datasource:
-    url: jdbc:h2:mem:voyagerdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password: 
+    # Postgres. Set these on the host; the defaults match `docker compose up -d db` in the repo root.
+    # A JDBC url, not the postgres:// one some hosts hand out: jdbc:postgresql://HOST:5432/DATABASE
+    # (add ?sslmode=require for a hosted database such as Supabase).
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/voyager}
+    username: ${DB_USER:voyager}
+    password: ${DB_PASSWORD:voyager}
+  flyway:
+    # Creates and upgrades the schema from db/migration on start-up, in order, once each.
+    enabled: true
   jpa:
     open-in-view: false   # Queries belong in services, not in view rendering. Also silences a startup warning.
     hibernate:
-      ddl-auto: update    # Fine for an in-memory database that starts empty. Against a real one, use migrations and "validate".
+      # The schema belongs to Flyway (db/migration). Hibernate only checks that the entities match it,
+      # and refuses to start if they do not. Set DDL_AUTO=none to skip even that check.
+      ddl-auto: ${DDL_AUTO:validate}
     show-sql: false       # Switch on while debugging a query; it is far too noisy to leave on.
-  # The H2 web console is deliberately not enabled. It is a way into the whole database, and it is not
-  # covered by the login. If you need it while developing, turn it on in a dev-only profile.
+  # The H2 web console is deliberately not enabled in any profile. It is a way into the whole database,
+  # and it is not covered by the login.

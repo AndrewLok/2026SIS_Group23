@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.voyager.backend.activities.IdeaService;
+import com.voyager.backend.bookings.BookingService;
 import com.voyager.backend.calendar.CalendarService;
 import com.voyager.backend.chat.ChatService;
 import com.voyager.backend.common.ApiException;
@@ -63,15 +64,18 @@ public class TripService {
     private final ChatService chatService;
     private final IdeaService ideaService;
     private final CalendarService calendarService;
+    private final BookingService bookingService;
 
     public TripService(TripRepository tripRepository, TripMemberRepository memberRepository, UserRepository userRepository,
-            ChatService chatService, IdeaService ideaService, CalendarService calendarService) {
+            ChatService chatService, IdeaService ideaService, CalendarService calendarService,
+            BookingService bookingService) {
         this.tripRepository = tripRepository;
         this.memberRepository = memberRepository;
         this.userRepository = userRepository;
         this.chatService = chatService;
         this.ideaService = ideaService;
         this.calendarService = calendarService;
+        this.bookingService = bookingService;
     }
 
     /* Looking things up */
@@ -380,6 +384,7 @@ public class TripService {
         // against the smaller group. The flush makes the head count it uses already exclude them.
         memberRepository.flush();
         ideaService.memberLeft(tripId, targetId);
+        bookingService.memberLeft(tripId, targetId);
         calendarService.memberLeft(tripId, targetId);
     }
 

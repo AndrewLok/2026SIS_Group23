@@ -1,17 +1,10 @@
 /*
  * The HTTP trips client against a stubbed fetch, so no backend has to be running. The fixtures are
  * the shapes the backend's TripFlowTests pin down on the Java side.
- *
- * The last block checks the bridge: that mock services (ideas, votes) still work on a trip and on
- * people that came from the backend, which is what keeps the unfinished screens usable.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as trips from '@/services/http/trips'
-import * as ideas from '@/services/mock/ideas'
-import * as votes from '@/services/mock/votes'
-import { adoptSession } from '@/services/mock/bridge'
-import { read, reset } from '@/services/mock/db'
 import { ApiError } from '@/types'
 
 const TRIP = {
@@ -28,7 +21,7 @@ const TRIP = {
   defaultEfficiency: 8.0,
   defaultPricePerLitreCents: 195,
   privateDebts: true,
-  budgetCapCents: null, // the backend sends this; the app has no use for it yet
+  budgetCapCents: null,
 }
 
 const MEMBERS = [
@@ -67,7 +60,6 @@ async function failure(promise: Promise<unknown>): Promise<ApiError> {
 }
 
 beforeEach(() => {
-  reset()
   fetchMock.mockReset()
   vi.stubGlobal('fetch', fetchMock)
 })
@@ -97,7 +89,28 @@ describe('trips', () => {
       defaultEfficiency: 8,
       defaultPricePerLitreCents: 195,
       privateDebts: true,
+      budgetCapCents: null,
     })
+  })
+
+  it('reads a budget cap when there is one, and refuses one that is not a number', async () => {
+    serve({ 'GET /api/trips': () => json(200, [{ ...TRIP, budgetCapCents: 250000 }]) })
+    expect((await trips.list())[0]?.budgetCapCents).toBe(250000)
+
+    for (const bad of ['250000', undefined, {}]) {
+      serve({ 'GET /api/trips': () => json(200, [{ ...TRIP, budgetCapCents: bad }]) })
+      await expect(trips.list()).rejects.toMatchObject({ code: 'unavailable' })
+    }
+  })
+
+  it('sets a budget cap and clears it again with null', async () => {
+    serve({ 'PATCH /api/trips/trip-real': () => json(200, { ...TRIP, budgetCapCents: 250000 }) })
+    expect((await trips.update('trip-real', { budgetCapCents: 250000 })).budgetCapCents).toBe(250000)
+    expect(lastCall().body).toEqual({ budgetCapCents: 250000 })
+
+    serve({ 'PATCH /api/trips/trip-real': () => json(200, TRIP) })
+    await trips.update('trip-real', { budgetCapCents: null })
+    expect(String(lastCall().init?.body)).toContain('"budgetCapCents":null')
   })
 
   it('creates a trip by sending only the four things the form has', async () => {
@@ -243,63 +256,5 @@ describe('members', () => {
     await trips.updateRole('trip-real', 'u-jonas', 'owner')
 
     expect(lastCall().body).toEqual({ role: 'owner' })
-  })
-})
-
-describe('the bridge into the mock store', () => {
-  it('mirrors a trip once, and leaves chat to the real backend', async () => {
-    serve({ 'GET /api/trips': () => json(200, [TRIP]) })
-
-    await trips.list()
-    await trips.list()
-
-    expect(read().trips.filter((t) => t.id === 'trip-real')).toHaveLength(1)
-    expect(read().trips.find((t) => t.id === 'trip-real')?.invite_code).toBe('K7M2QX')
-    // Chat is real now, so no mock channel is invented for a real trip.
-    expect(read().channels.filter((c) => c.trip_id === 'trip-real')).toHaveLength(0)
-  })
-
-  it('mirrors members and profiles, keeps the signed-in email, and drops people who left', async () => {
-    adoptSession({ id: 'u-priya', displayName: 'Priya Nair', email: 'priya@example.com', avatarHue: 40 })
-    serve({ 'GET /api/trips/trip-real/members': () => json(200, MEMBERS) })
-    await trips.listMembers('trip-real')
-
-    const mirrored = () => read().tripMembers.filter((m) => m.trip_id === 'trip-real').map((m) => m.user_id)
-    expect(mirrored()).toEqual(['u-priya', 'u-jonas', 'u-mia'])
-    expect(read().profiles.find((p) => p.id === 'u-priya')?.email).toBe('priya@example.com')
-    expect(read().profiles.find((p) => p.id === 'u-jonas')?.display_name).toBe('Jonas Weber')
-
-    serve({ 'GET /api/trips/trip-real/members': () => json(200, [MEMBERS[0], MEMBERS[2]]) })
-    await trips.listMembers('trip-real')
-    expect(mirrored()).toEqual(['u-priya', 'u-mia'])
-  })
-
-  it('lets the mock ideas and voting run on a real trip: proposing, then a second vote agrees it', async () => {
-    adoptSession({ id: 'u-priya', displayName: 'Priya Nair', email: 'priya@example.com', avatarHue: 40 })
-    serve({
-      'GET /api/trips': () => json(200, [TRIP]),
-      'GET /api/trips/trip-real/members': () => json(200, MEMBERS),
-    })
-    await trips.list()
-    await trips.listMembers('trip-real')
-
-    const idea = await ideas.create({
-      tripId: 'trip-real',
-      title: 'Kayaking',
-      description: '',
-      category: 'activity',
-      proposedStart: null,
-      proposedEnd: null,
-      allDay: false,
-      needsVote: true,
-      attendeeIds: [],
-    })
-    // Three members need two agrees. The proposer's own vote is one.
-    expect(idea.status).toBe('voting')
-
-    adoptSession({ id: 'u-jonas', displayName: 'Jonas Weber', email: 'jonas@example.com', avatarHue: 200 })
-    await votes.cast(idea.id, 1)
-
-    expect(read().ideas.find((i) => i.id === idea.id)?.status).toBe('agreed')
   })
 })

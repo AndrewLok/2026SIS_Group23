@@ -11,8 +11,9 @@
  * the last mock service has a backend.
  */
 
-import { write } from '@/services/mock/db'
-import type { Profile, Role, Trip, TripMember } from '@/types'
+import { read, write } from '@/services/mock/db'
+import { toExpense } from '@/types'
+import type { Expense, Profile, Role, Trip, TripMember } from '@/types'
 
 /** The signed-in account, or null to sign out. */
 export function adoptSession(profile: Profile | null): void {
@@ -90,4 +91,15 @@ export function adoptMembers(tripId: string, members: MemberWithProfile[]): void
       else draft.profiles.push(row)
     }
   })
+}
+
+/**
+ * The expenses that fuel legs wrote into the mock store. Expenses are real now, but fuel is not yet,
+ * and a fuel leg's expense is part of every balance, so the real list has these added to it. Once
+ * fuel is on the backend it writes its own expenses there, and this goes.
+ */
+export function mirroredFuelExpenses(tripId: string): Expense[] {
+  return read()
+    .expenses.filter((e) => e.trip_id === tripId && e.source === 'fuel')
+    .map(toExpense)
 }
